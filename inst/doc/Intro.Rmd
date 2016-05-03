@@ -1,0 +1,64 @@
+---
+title: "BeviMed Introduction"
+author: "Daniel Greene"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{BeviMed Introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\usepackage[utf8]{inputenc}
+---
+```{r echo=FALSE}
+knitr::opts_chunk$set(dev="svg", fig.width=7, fig.height=7)
+```
+
+`BeviMed` has a function `bevimed` for performing *Bayesian Evaluation of Variant Involvement in Mendelian Disease*. The aim is to estimate the probability of an association between individual configurations of a restricted set of variants and a case-control label, and conditional on the association, the probabilities of pathogenicity for individual variants.  
+
+`bevimed` is an MCMC sampling procedure with many parameters, including the data `y` (a `logical` vector), a `k` by `N` matrix of variant-level genotypes `G` (where `length(y) == nrow(G)`), a mode of inheritance hypothesis encoded as an integer (minimum number of alleles required for affection) `min_ac`, and others determining the sampling management and prior distributions of the model parameters. 
+
+It returns a list of traces for the sampled parameters in an object of class `BeviMed`. This object can take up a lot of, and hence it may be preferable to store a summarised version by passing it to `summary`. 
+
+Quantities of interest can also be computed directly from the parameters - for example via the function `log BF`, returning a log Bayes factor between the variant-level model for case-control status and a baseline model whereby there is no association between variants in the region and case-control status - or the function `probability_pathogenic` a probability of association given some prior probability.
+
+```{r}
+library(BeviMed)
+set.seed(0)
+```
+
+Firstly, we'll generate some random data consisting of a disease affection status, `y` and a variant-wise indicator of pathogenicity, `Z`, where `Z[i] == TRUE` if variant `i` is pathogenic and `FALSE` otherwise.
+
+```{r}
+y <- c(rep(TRUE, 20), rep(FALSE, 80))
+Z <- c(rep(TRUE, 3), rep(FALSE, 20))
+```
+
+In the first application, we'll use variant matrix `G1` where there is no association between `y` and the variants.
+
+```{r}
+G1 <- sapply(y, function(y_i) as.integer(runif(n=length(Z)) < 0.15))
+
+probability_pathogenic(G=G1, y=y)
+```
+
+The results indicate that there is little preference for model $v$ over model $n$. In the example *with* association, we'll sample the allele counts based on `y`. 
+
+```{r}
+G2 <- sapply(y, function(y_i) as.integer(runif(n=length(Z)) < 0.15 | 
+	(if (y_i) 1:length(Z) == sample(which(Z), size=1) else rep(FALSE, length(Z)))))
+
+probability_pathogenic(G=G2, y=y)
+```
+
+For a more detailed output (containing the variant-level probabilities of pathogenicity), the `bevimed` function can be called, summarised and stored.
+
+```{r}
+output <- summary(bevimed(G=G2, y=y))
+
+output
+```
+
+Note that now the estimated log Bayes factor in favour of the variant-level model is high. Furthermore, we can use `print` passing the option `print_Z=TRUE` to print a summary of the results containing the variant-level probabilities of pathogenicity.
+
+```{r}
+print(output, print_Z=TRUE)
+```
