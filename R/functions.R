@@ -8,7 +8,7 @@
 #' @param block_ends Integer vector of (exclusive) k 0-indexed end positions.
 #' @param cases 0 based vector of case indices with respect to y.
 #' @param counts Vector of variant counts.
-#' @param min_ac Minimum allele count required for pathogenic configuration.
+#' @template min_ac
 #' @param q_shape Beta distribution parameterisation of benign variant configuration rate of affection, q.
 #' @param p_shape Beta distribution parameterisation of pathogenic variant configuration rate of affection, p.
 #' @param omega_shape Beta distribution of global rate of pathogenicty of variants in gene given pathogenicity of gene, omega.
@@ -29,11 +29,10 @@
 #' @param case_variant_block_starts 0-indexed start positions for contiguous blocks of variants in \code{case_variants}.
 #' @param case_variant_block_ends As \code{case_variant_block_starts} for (exclusive) stop positions.
 #' @param case_variants Integer vector giving variant numbers (0-based, i.e. between 0 and k-1). Used to pick pairs of variants for tandem updates from.
-#' @template store_Z
+#' @template store_Z_trace
 #' @template burn
 #' @param check Logical value indicating whether to perform validation on the arguments before calling the c++ function. 
 #' @return Object of class \code{BeviMed}, containing the output of the MCMC sampling.
-#' @export
 #' @importFrom Rcpp evalCpp
 #' @useDynLib BeviMed
 call_cpp <- function(
@@ -64,7 +63,7 @@ call_cpp <- function(
 	case_variant_block_starts,
 	case_variant_block_ends,
 	case_variants,
-	store_Z,
+	store_Z_trace,
 	burn=0,
 	check=TRUE
 ) {
@@ -86,14 +85,14 @@ call_cpp <- function(
 	}
 
 	raw <- .Call(
-		"R_parallel_tempered_markov_chain",
+		"R_bevimed_mc",
 		samples_per_chain,
 		y,
 		block_starts,
 		block_ends,
 		cases,
 		counts,
-		min_ac,
+		if (length(min_ac) == length(y)) min_ac else rep(min_ac, length(y)),
 		q_shape[1],
 		q_shape[2],
 		p_shape[1],
@@ -117,7 +116,7 @@ call_cpp <- function(
 		case_variant_block_starts,
 		case_variant_block_ends,
 		case_variants,
-		store_Z,
+		store_Z_trace,
 		PACKAGE="BeviMed"
 	)
 
@@ -153,6 +152,7 @@ call_cpp <- function(
 				estimate_phi=estimate_phi,
 				estimate_omega=estimate_omega,
 				y=y,
+				min_ac=min_ac,
 				variant_table=data.frame(
 					variant=unlist(mapply(SIMPLIFY=FALSE, FUN=rep, 1:length(block_starts), block_ends-block_starts)),
 					case=cases+1,
@@ -166,13 +166,12 @@ call_cpp <- function(
 	)
 }
 
-#' Calculate the Marginal Likelihood under v by summation over power posterior likelihood exptectances
+#' Calculate the Marginal Likelihood by summation over power posterior likelihood exptectances
 #'
 #' @template y_log_lik_t_equals_1_traces
 #' @param temperatures Numeric vector of temperatures used to produce \code{y_log_lik_t_equals_1_traces}.
 #' @return Numeric value of estimated log marginal likelihood.
-#' @export
-power_posteriors_ML_sum <- function(y_log_lik_t_equals_1_traces, temperatures) {
+sum_ML_over_PP <- function(y_log_lik_t_equals_1_traces, temperatures) {
 	sum(mapply(FUN=function(y_lik, t_diff) { log(mean(exp(t_diff*(y_lik)))) }, split(t(y_log_lik_t_equals_1_traces)[-length(temperatures),], seq(length(temperatures)-1)), diff(temperatures)))
 }
 
@@ -210,9 +209,8 @@ stack_BeviMeds <- function(...) {
 #' @template y_log_lik_t_equals_1_traces
 #' @template confidence
 #' @template simulations
-#' @export
 #' @importFrom stats rt quantile
-estimate_confidence_interval <- function(
+CI_gamma1_evidence <- function(
 	temperatures,
 	y_log_lik_t_equals_1_traces,
 	confidence=0.95,
@@ -238,7 +236,7 @@ estimate_confidence_interval <- function(
 
 #' Apply the MCMC algorithm in blocks until conditions are met
 #'
-#' Sample blocks of a given size until either the estimated log marginal likelihood falls within a given confidence interval, there is sufficient confidence that the log Bayes factor over the null model is at most a certain quantity, or a certain number of blocks have been sampled.
+#' Sample blocks of a given size until either the estimated log marginal likelihood falls within a given confidence interval, there is sufficient confidence that the log Bayes factor of model gamma = 1 to model gamma = 0 is at most a certain quantity, or a certain number of blocks have been sampled.
 #' @template y
 #' @param blocks_remaining Maximum number of blocks left before termination.
 #' @param start_Zs Initial (logical) Z-matrix.
@@ -248,13 +246,13 @@ estimate_confidence_interval <- function(
 #' @param tolerance Maximum width for confidence_interval of log marginal likelihood to allow before stopping the chain.
 #' @template confidence
 #' @template simulations
-#' @template marginal_likelihood_only
+#' @template gamma0_shape
 #' @param quit_if_highest_possible_BF_less_than Numeric value used to determine whether to stop the sampling after consecutive blocks. If we are confident (to the extent given by the parameter \code{confidence}) that log Bayes factor of v against n is under this value, we stop the sampling as soon as possible.
 #' @template y_log_lik_t_equals_1_traces
 #' @param full_block_traces List of outputs of calls to MCMC routine. 
 #' @template verbose
 #' @param ... Other arguments passed to \code{\link{call_cpp}}
-#' @return If \code{marginal_likelihood_only == TRUE}, then a numeric value giving the log marginal likelihood, otherwise an object of class \code{BeviMed}.
+#' @return An object of class \code{BeviMed}.
 stop_chain <- function(
 	y,
 	blocks_remaining,
@@ -265,7 +263,7 @@ stop_chain <- function(
 	tolerance=1,
 	confidence=0.95,
 	simulations=1000,
-	marginal_likelihood_only=TRUE,
+	gamma0_shape=c(2, 100),
 	quit_if_highest_possible_BF_less_than=-Inf,
 	y_log_lik_t_equals_1_traces=matrix(ncol=length(temperatures),nrow=0),
 	full_block_traces=list(),
@@ -288,19 +286,15 @@ stop_chain <- function(
 		mc[["y_log_lik_t_equals_1"]]
 	)
 	
-	confidence_interval <- estimate_confidence_interval(temperatures, y_ll, confidence=confidence, simulations=simulations)
+	confidence_interval <- CI_gamma1_evidence(temperatures, y_ll, confidence=confidence, simulations=simulations)
 
 	if (verbose) {
-		cat("Confidence interval:\n")
+		cat(paste0(round(confidence * 100), "% confidence interval, width = ", round(digits=2, diff(confidence_interval)), ":\n"))
 		print(round(digits=2, confidence_interval))
 	}
 
-	if (diff(confidence_interval) < tolerance | (confidence_interval[2]-`log P_n`(y)) < quit_if_highest_possible_BF_less_than | blocks_remaining <= 1) {
-		if (marginal_likelihood_only) { 
-			power_posteriors_ML_sum(y_ll, temperatures) 
-		} else {
-			do.call(what=stack_BeviMeds, c(full_block_traces, list(mc)))
-		}
+	if (diff(confidence_interval) < tolerance | (confidence_interval[2]-gamma0_evidence(y, shape=gamma0_shape)) < quit_if_highest_possible_BF_less_than | blocks_remaining <= 1) {
+		do.call(what=stack_BeviMeds, c(full_block_traces, list(mc)))
 	} else {
 		stop_chain(
 			y=y,
@@ -310,11 +304,11 @@ stop_chain <- function(
 			start_Zs=mc[["terminal_Z"]],
 			start_logit_omegas=mc[["terminal_logit_omega"]],
 			start_log_phis=mc[["terminal_log_phi"]],
-			marginal_likelihood_only=marginal_likelihood_only,
 			temperatures=temperatures,
 			quit_if_highest_possible_BF_less_than=quit_if_highest_possible_BF_less_than,
 			y_log_lik_t_equals_1_traces=y_ll,
 			full_block_traces=c(full_block_traces, list(mc)),
+			verbose=verbose,
 			...
 		)
 	}
@@ -332,7 +326,6 @@ stop_chain <- function(
 #' @template verbose
 #' @param ... Other arguments to be passed to \code{\link{call_cpp}}.
 #' @return Numeric vector of proposal SDs for the different temperature chains.
-#' @export
 tune_proposal_sds <- function(tune_for=c("logit_omega", "log_phi"), initial_proposal_sds, target_acceptance_range=c(0.3,0.7), other_param_proposal_sd=0.7, max_tuning_cycles=10, initial_rate=1, rate_decay=1.2, verbose=FALSE, ...) {
 	stopifnot(all(tune_for %in% c("logit_omega", "log_phi")))
 
@@ -366,14 +359,12 @@ tune_proposal_sds <- function(tune_for=c("logit_omega", "log_phi"), initial_prop
 #' @param return_temperatures Logical value determining whether to return just the numeric vector of tuned temperatures or to return the \code{BeviMed}-classed object containing the output of the MCMC sampling.
 #' @param ... Other arguments to pass to \code{call_cpp}.
 #' @return If \code{return_temperatures == TRUE}, a numeric vector of tuned temperatures, otherwise an object of class \code{BeviMed}.
-#' @export
 #' @importFrom stats var
 tune_temperatures <- function(
 	number_of_temperatures,
 	return_temperatures=FALSE,
 	...
 ) {
-#could add option for parallel tempering the tuning runs... i.e. discard all but last - obviously less efficient as in this case we won't be using the other temperature chains...
 	temperatures <- 0:1
 	chains <- lapply(temperatures, function(t) call_cpp(
 		temperatures=t,
@@ -398,7 +389,7 @@ tune_temperatures <- function(
 	if (return_temperatures) temperatures else list(chains=chains, E=E, V=V, temperatures=temperatures)
 }
 
-#' Perform inference under model variant-level model v for y using MCMC sampling
+#' Perform inference under model gamma = 1
 #'
 #' This function is the main user-interface to the underlying c++ MCMC sampling routine.
 #' @template y
@@ -408,50 +399,46 @@ tune_temperatures <- function(
 #' @template p_shape
 #' @template omega_shape 
 #' @template samples_per_chain
-#' @param stop_early Logical value determining whether to attempt to stop the sampling as soon as certain conditions are met (i.e. either the estimated marginal log likelihood lies within a certain confidence interval, or we are sufficiently confidence that the log Bayes factor against the null model is sufficiently low).
-#' @param max_samples Maximum number of samples to take before terminating the sampling.
+#' @param stop_early Logical value determining whether to attempt to stop the sampling as soon as certain conditions are met (i.e. either the estimated marginal log likelihood lies within a certain confidence interval, or we are sufficiently confidence that the log Bayes factor against of model gamma = 1 over model gamma = 0 is sufficiently low).
+#' @param blocks Maximum number of blocks of length \code{samples_per_chain} samples to draw before either the confidence interval for the marginal likelihood under the model gamma = 1 is sufficiently small or terminating the sampling.
 #' @template burn
 #' @template temperatures
-#' @param tune_temperatures Integer value - if greater than 0, the \code{temperatures} argument is ignored, and instead \code{tune_temperatures} tuned temperatures are used instead.
-#' @template marginal_likelihood_only
-#' @template store_Z
+#' @param tune_temps Integer value - if greater than 0, the \code{temperatures} argument is ignored, and instead \code{tune_temps} tuned temperatures are used instead.
+#' @template store_Z_trace
 #' @param swaps Number of swaps between adjacent tempered chains to perform per update cycle.
 #' @param optimise_Z0 Logical value determining whether to use a simulated annealing optimisation run to tune the initial values of \code{Z}.
-#' @param tune_omega_and_phi_proposal_sd Logical value determining whether the proposal SDs of the Metropolis-Hastings estimated parameters should be tuned for a target acceptance range (see \code{\link{tune_proposal_sds}},
-#' @param tune_block_size Integer value giving number of samples to draw when estimatating the acceptance rate of the omega/phi proposals in call to \code{\link{tune_proposal_sds}}.
+#' @param tune_omega_and_phi_proposal_sd Logical value determining whether the proposal SDs of the Metropolis-Hastings estimated parameters should be tuned for a target acceptance range.
+#' @param tune_block_size Integer value giving number of samples to draw when estimatating the acceptance rate of the omega/phi proposals.
 #' @template variant_weights
-#' @template estimate_phi
 #' @template log_phi_mean
-#' @template log_phi_sd
+#' @param log_phi_sd SD for normal prior on scaling factor phi. Setting to 0 causes the weights to be fixed and not estimated.
 #' @template tandem_variant_updates
 #' @param ... Other arguments to be passed to \code{\link{stop_chain}} and/or \code{\link{tune_proposal_sds}}.
-#' @return If \code{marginal_likelihood_only == TRUE}, then a numeric value giving the log marginal likelihood, otherwise an object of class \code{BeviMed}.
+#' @return An object of class \code{BeviMed}.
 #' @export
-#' @importFrom stats rnorm runif rbeta
+#' @importFrom stats rnorm runif rbeta sd
 bevimed <- function(
 	y,
 	G,
 	min_ac=1L,
 	q_shape=c(2,100),
 	p_shape=c(10, 2),
-	omega_shape=if (min_ac == 1L) c(2, 9) else c(2, 2),
+	omega_shape=if (max(min_ac) == 1L) c(2, 9) else c(2, 2),
 	samples_per_chain=2000,
 	stop_early=FALSE,
-	max_samples=5000,
+	blocks=5,
 	burn=as.integer(samples_per_chain/10),
 	temperatures=(0:10/10)^2,
-	tune_temperatures=0,
-	marginal_likelihood_only=FALSE,
-	store_Z=!marginal_likelihood_only,
+	tune_temps=0,
+	store_Z_trace=TRUE,
 	swaps=as.integer(length(temperatures)/2),
 	optimise_Z0=FALSE,
 	tune_omega_and_phi_proposal_sd=FALSE,
 	tune_block_size=100,
 	variant_weights=NULL,
-	estimate_phi=!is.null(variant_weights), 
 	log_phi_mean=-1.5,
 	log_phi_sd=1,
-	tandem_variant_updates=if (min_ac == 1) 0 else sum(y),
+	tandem_variant_updates=if (max(min_ac) == 1) 0 else min(sum(y), nrow(G)),
 	...
 ) {
 	stopifnot(is.matrix(G))
@@ -459,7 +446,9 @@ bevimed <- function(
 	stopifnot(is.numeric(G))
 	stopifnot(is.logical(y))
 
-	normalised_weights <- if (is.null(variant_weights)) integer(nrow(G)) else variant_weights - mean(variant_weights)
+	estimate_phi <- !((log_phi_sd == 0) | is.null(variant_weights))
+
+	normalised_weights <- (if (is.null(variant_weights) | (sd(variant_weights) == 0)) { rep(0L, nrow(G)) } else { (variant_weights - mean(variant_weights))/sd(variant_weights) }) * (if (estimate_phi) 1 else exp(log_phi_mean))
 
 	counts <- as.integer(t(G))
 	variants <- rep(1:nrow(G), each=ncol(G))
@@ -500,14 +489,14 @@ bevimed <- function(
 		case_variants=unlist(y1_variants)-1
 	)
 
-	if (tune_temperatures > 0) {
+	if (tune_temps > 0) {
 		temperatures <- do.call(
-			what=BeviMed::tune_temperatures,
+			what=tune_temperatures,
 			c(
 				reused_arguments,
 				list(
 					samples_per_chain=samples_per_chain,
-					number_of_temperatures=tune_temperatures,
+					number_of_temperatures=tune_temps,
 					return_temperatures=TRUE,
 					Z0_matrix=matrix(runif(nrow(G)) < omega_shape[1]/sum(omega_shape), nrow=1, ncol=nrow(G)),
 					logit_omegas=local({ w <- rbeta(n=1, shape1=omega_shape[1], shape2=omega_shape[2]); log(w)-log(1-w) }),
@@ -515,7 +504,7 @@ bevimed <- function(
 					log_phis=if (estimate_phi) rnorm(n=1, mean=log_phi_mean, sd=log_phi_sd) else rep(0, 1),
 					log_phi_proposal_sds=rep(initial_log_phi_proposal_sd, 1), 
 					annealing=FALSE,
-					store_Z=FALSE
+					store_Z_trace=FALSE
 				)
 			)
 		)
@@ -534,7 +523,7 @@ bevimed <- function(
 				temperatures=rep(1, length(temperatures)),
 				chain_swaps_per_cycle=swaps,
 				annealing=TRUE,
-				store_Z=FALSE
+				store_Z_trace=FALSE
 			)
 		))[["terminal_Z"]]
 	} else {
@@ -555,7 +544,7 @@ bevimed <- function(
 					log_phis=if (estimate_phi) rnorm(n=length(temperatures), mean=log_phi_mean, sd=log_phi_sd) else rep(0, length(temperatures)),
 					temperatures=temperatures,
 					annealing=FALSE,
-					store_Z=FALSE
+					store_Z_trace=FALSE
 				),
 				list(...)[intersect(names(list(...)), names(formals(tune_proposal_sds)))]
 			))
@@ -576,7 +565,7 @@ bevimed <- function(
 				log_phi_proposal_sds=proposal_sds[["log_phi"]], 
 				temperatures=temperatures,
 				annealing=FALSE,
-				store_Z=FALSE
+				store_Z_trace=FALSE
 			)
 		))
 
@@ -586,21 +575,20 @@ bevimed <- function(
 				samples_per_chain=samples_per_chain,
 				y_log_lik_t_equals_1=matrix(ncol=length(temperatures),nrow=0),
 				burn=0,
-				marginal_likelihood_only=marginal_likelihood_only,
 				start_Zs=burn[["terminal_Z"]],
 				start_logit_omegas=burn[["terminal_logit_omega"]],
 				start_log_phis=burn[["terminal_log_phi"]],
 				temperatures=temperatures,
-				blocks_remaining=max(1, as.integer(max_samples/samples_per_chain)),
+				blocks_remaining=max(1, blocks),
 				logit_omega_proposal_sds=proposal_sds[["logit_omega"]],
 				log_phi_proposal_sds=proposal_sds[["log_phi"]], 
 				annealing=FALSE,
-				store_Z=store_Z
+				store_Z_trace=store_Z_trace
 			),
 			list(...)[intersect(names(list(...)), names(formals(stop_chain)))]
 		))
 	} else {
-		chains <- do.call(
+		do.call(
 			what=call_cpp,
 			c(
 				reused_arguments,
@@ -614,188 +602,209 @@ bevimed <- function(
 					log_phi_proposal_sds=proposal_sds[["log_phi"]], 
 					temperatures=temperatures,
 					annealing=FALSE,
-					store_Z=store_Z
+					store_Z_trace=store_Z_trace
 				)
 			)
 		)
-
-		if (!marginal_likelihood_only) chains else power_posteriors_ML_sum(chains[["y_log_lik_t_equals_1"]], temperatures)
 	}
 }
 
-#' Generate samples from the posterior under the variant-level pathogenicity model
+#' Calculate marginal probability of observed case-control status y under model gamma = 0
 #' 
-#' Samples the posterior of the variant-level pathogenicity model using a Gibbs sampling based MCMC routine.
+#' Marginal probability calculated exactly by integration.
+#' @template y
+#' @param shape Beta shape hyper-priors for prior on rate of case labels
+#' @export
+gamma0_evidence <- function(
+	y,
+	shape=c(2, 100)
+) {
+	lbeta(sum(y)+shape[1], length(y)-sum(y)+shape[2]) -
+	lbeta(shape[1], shape[2])
+}
+
+#' Calculate marginal probability of observed case-control status under model gamma = 1 
 #' 
 #' @template y
 #' @template G_matrix
 #' @template min_ac
-#' @template q_shape
-#' @template p_shape
-#' @template omega_shape
-#' @template variant_weights
-#' @template estimate_phi
-#' @param samples Number of samples to draw.
-#' @template burn
-#' @param just_Z Logical value determining whether to only return the matrix of Z-samples.
+#' @param ... Other arguments to pass to \code{\link{bevimed}}.
 #' @export
-#' @importFrom stats runif rbeta rnorm
-sample_posterior_v <- function(
+gamma1_evidence <- function(
 	y,
 	G,
 	min_ac=1L,
-	q_shape=c(2,100),
-	p_shape=c(10, 2),
-	omega_shape=c(2, 9),
-	variant_weights=NULL,
-	estimate_phi=!is.null(variant_weights),
-	samples=10000,
-	burn=as.integer(samples/10),
-	just_Z=FALSE
+	...
 ) {
-	counts <- as.integer(t(G))
-	variants <- rep(1:nrow(G), each=ncol(G))
-	cases <- rep(1:ncol(G), times=nrow(G))
+	stopifnot(min(min_ac) > 0)
+	stopifnot(is.matrix(G) & is.numeric(G))
+	stopifnot(ncol(G) == length(y))
 
-	block_ends <- cumsum(lapply(split(counts, variants), function(cnts) sum(cnts > 0)))
-	block_starts <- c(0, block_ends[-length(block_ends)])
-
-	#note - we *must* estimate omega if we are to use weights as we can't integrate it out
-	estimate_omega <- !is.null(variant_weights)
-
-	out <- call_cpp(
-		samples_per_chain=samples,
+	bv <- bevimed(
+		store_Z_trace=FALSE,
 		y=y,
-		block_starts=block_starts,
-		block_ends=block_ends,
-		cases=cases[counts > 0]-1,
-		counts=counts[counts > 0],
+		G=G,
 		min_ac=min_ac,
-		q_shape=q_shape,
-		p_shape=p_shape,
-		omega_shape=omega_shape,
-		Z0_matrix=matrix(nrow=1, runif(n=nrow(G)) < omega_shape[1]/sum(omega_shape)),
-		temperatures=1.0,
-		estimate_omega=estimate_omega,
-		logit_omegas=local({ w <- rbeta(n=1, shape1=omega_shape[1], shape2=omega_shape[2]); log(w)-log(1-w) }),
-		logit_omega_proposal_sds=1.0,
-		variant_weights=if (is.null(variant_weights)) integer(nrow(G)) else variant_weights - mean(variant_weights),
-		estimate_phi=estimate_phi,
-		log_phis=if (estimate_phi) rnorm(n=1, mean=-1.5, sd=1) else integer(1),
-		log_phi_mean=-1.5,
-		log_phi_sd=1,
-		log_phi_proposal_sds=1,
-		chain_swaps_per_cycle=0,
-		annealing=FALSE,
-		tandem_variant_updates=0,
-		case_variant_block_starts=integer(0),
-		case_variant_block_ends=integer(0),
-		case_variants=integer(0),
-		store_Z=TRUE
+		...
 	)
 
-	if (just_Z)
-		"[["(out, "Z")
-	else
-		out[c("Z", "logit_omega", "log_phi")[c(TRUE, rep(estimate_omega, 2))]]
+	sum_ML_over_PP(bv[["y_log_lik_t_equals_1"]], bv[["temperatures"]])
 }
 
-#' Calculate marginal probability of observed genotypes under 'null' model
-#' 
-#' Marginal probability calculated exactly by integration.
-#' @template y
-#' @template q_shape
-#' @export
-`log P_n` <- function(
-	y,
-	q_shape=c(2, 100)
-) {
-	lbeta(sum(y)+q_shape[1], length(y)-sum(y)+q_shape[2]) -
-	lbeta(q_shape[1], q_shape[2])
-}
-
-#' Calculate log Bayes factor comparing the variant-level model for case-control status
+#' Calculate log Bayes factor between models gamma=1 and gamma=0 given the data
 #' 
 #' @template y
 #' @param ... Other arguments to pass to \code{\link{bevimed}}.
+#' @template gamma0_shape
 #' @return Log Bayes factor.
 #' @export
-`log BF` <- function(
+log_BF <- function(
 	y,
+	gamma0_shape=c(2, 100),
 	...
 ) {
-	`log P_v`(
+	gamma1_evidence(
 		y=y,
 		...
 	) - 
-	`log P_n`(y)
+	gamma0_evidence(y, shape=gamma0_shape)
 }
 
-#' Calculate region or variant-level probability of pathogencity given prior probability on pathogenicity of region
+#' Calculate probability of an association between presence/absence of local genotype configuration and case-control label
 #'
-#' @param prior Numeric value giving prior for probability of pathogenicity of region.
-#' @param variant_level Logical value determining whether to return the probabilities of pathogenicity for the individual variants or for the region as a whole.
+#' @template y
+#' @template G_matrix
+#' @template ploidy 
+#' @template dominant_prior
+#' @template recessive_prior
+#' @template gamma0_shape
+#' @template by_MOI
+#' @param ... Other arguments to pass to \code{\link{log_BF}}. 
+#' @return Probability of association.
+#' @export
+prob_association <- function(
+	y,
+	G,
+	ploidy=rep(2L, length(y)),
+	dominant_prior=0.01,
+	recessive_prior=0.01,
+	gamma0_shape=c(2, 100),
+	by_MOI=FALSE,
+	...
+) {
+	stopifnot(is.matrix(G) & is.numeric(G))
+	stopifnot(ncol(G) == length(y))
+
+	dom_ev <- if (dominant_prior > 0) gamma1_evidence(y=y, G=G, min_ac=1L, ...) else -Inf
+	rec_ev <- if (recessive_prior > 0) gamma1_evidence(y=y, G=G, min_ac=ploidy, ...) else -Inf
+	g0_ev <- gamma0_evidence(y=y, shape=gamma0_shape)
+
+	modal_model <- max(c(dom_ev, rec_ev, g0_ev))
+	num_dom <- dominant_prior * exp(dom_ev-modal_model)
+	num_rec <- recessive_prior * exp(rec_ev-modal_model)
+	num_g0 <- (1-dominant_prior-recessive_prior) * exp(g0_ev-modal_model)
+	denom <- num_dom + num_rec + num_g0
+
+	#posterior
+	moi_probs <- c(Dominant=num_dom/denom, Recessive=num_rec/denom)
+	if (by_MOI) moi_probs
+	else sum(moi_probs)
+}
+
+#' Calculate probability of an association
+#'
+#'Synonym of \code{\link{prob_association}}
+#'
+#' @param ... Arguments passed to \code{\link{prob_association}}
+#' @return Probability of association.
+#' @export
+gamma1_prob <- function(...) prob_association(...)
+
+#' Calculate probability of pathogencity for variants in region given a prior probability of association between case label and the region
+#'
+#' @template y
+#' @template G_matrix
+#' @template ploidy 
+#' @template dominant_prior
+#' @template recessive_prior
+#' @template gamma0_shape
+#' @template by_MOI
+#' @param ... Other arguments to pass to \code{\link{bevimed}}. 
+#' @return Probabilities of pathogenicity.
+#' @export
+prob_pathogenic <- function(
+	y,
+	G,
+	ploidy=rep(2L, length(y)),
+	dominant_prior=0.01,
+	recessive_prior=0.01,
+	gamma0_shape=c(2, 100),
+	by_MOI=FALSE,
+	...
+) {
+	stopifnot(is.matrix(G) & is.numeric(G))
+	stopifnot(ncol(G) == length(y))
+
+	dom_bv <- bevimed(
+		store_Z_trace=TRUE,
+		y=y,
+		G=G,
+		min_ac=1L,
+		...
+	)
+
+	rec_bv <- bevimed(
+		store_Z_trace=TRUE,
+		y=y,
+		G=G,
+		min_ac=ploidy,
+		...
+	)
+
+	dom_ev <- sum_ML_over_PP(dom_bv[["y_log_lik_t_equals_1"]], dom_bv[["temperatures"]])
+	rec_ev <- sum_ML_over_PP(rec_bv[["y_log_lik_t_equals_1"]], rec_bv[["temperatures"]])
+	g0_ev <- gamma0_evidence(y, shape=gamma0_shape)
+
+	modal_model <- max(c(dom_ev, rec_ev, g0_ev))
+	num_dom <- dominant_prior * exp(dom_ev-modal_model)
+	num_rec <- recessive_prior * exp(rec_ev-modal_model)
+	num_g0 <- (1-dominant_prior-recessive_prior) * exp(g0_ev-modal_model)
+	denom <- num_dom + num_rec + num_g0
+
+	dom_conditional_prob_pathogenic <- apply(dom_bv[["Z"]][,dom_bv[["k"]]*(length(dom_bv[["temperatures"]])-1)+1:dom_bv[["k"]],drop=FALSE], 2, mean)
+	rec_conditional_prob_pathogenic <- apply(rec_bv[["Z"]][,rec_bv[["k"]]*(length(rec_bv[["temperatures"]])-1)+1:rec_bv[["k"]],drop=FALSE], 2, mean)
+
+	prob_by_moi <- cbind(
+		Dominant=dom_conditional_prob_pathogenic*num_dom/denom,
+		Recessive=rec_conditional_prob_pathogenic*num_rec/denom
+	)
+	if (by_MOI) prob_by_moi
+	else apply(prob_by_moi, 1, sum)
+}
+
+#' Calculate probability of pathogencity for variants in region given an association between case label and the region
+#'
 #' @template y
 #' @template G_matrix
 #' @template min_ac
 #' @param ... Other arguments to pass to \code{\link{bevimed}}. 
 #' @return Probabilities of pathogenicity.
 #' @export
-probability_pathogenic <- function(
-	prior=0.05,
-	variant_level=FALSE,
+conditional_prob_pathogenic <- function(
 	y,
 	G,
-	min_ac=1,
+	min_ac=1L,
 	...
 ) {
-	stopifnot(min_ac > 0)
-	stopifnot(is.matrix(G) & is.numeric(G))
-	stopifnot(ncol(G) == length(y))
-
-	sampling_summary <- summary(bevimed(
-		marginal_likelihood_only=FALSE,
-		y=y,
-		G=G,
-		min_ac=min_ac,
-		...
-	))
-
-	log_bf <- sampling_summary[["ML_v"]]-sampling_summary[["ML_n"]]
-
-	posterior <- exp(log_bf) * prior / (exp(log_bf) * prior + 1 - prior)
-
-	if (variant_level) {
-		sampling_summary[["Z"]]	* posterior
-	} else {
-		posterior
-	}
-}
-
-#' Calculate marginal probability of observed genotypes under variant-level pathogenicity model
-#' 
-#' @template y
-#' @template G_matrix
-#' @template min_ac
-#' @param ... Other arguments to pass to \code{\link{bevimed}}.
-#' @export
-`log P_v` <- function(
-	y,
-	G,
-	min_ac=1,
-	...
-) {
-	stopifnot(min_ac > 0)
-	stopifnot(is.matrix(G) & is.numeric(G))
-	stopifnot(ncol(G) == length(y))
-
-	bevimed(
-		marginal_likelihood_only=TRUE,
+	bv <- bevimed(
+		store_Z_trace=TRUE,
 		y=y,
 		G=G,
 		min_ac=min_ac,
 		...
 	)
+
+	apply(bv[["Z"]][,bv[["k"]]*(length(bv[["temperatures"]])-1)+1:bv[["k"]],drop=FALSE], 2, mean)
 }
 
 #' Calculate marginal probability of observed genotypes under 'pathogenic region' model
@@ -807,7 +816,7 @@ probability_pathogenic <- function(
 #' @template q_shape
 #' @template p_shape
 #' @export
-`log P_r` <- function(
+region_association_evidence <- function(
 	y,
 	G,
 	min_ac=1L,
@@ -831,30 +840,34 @@ probability_pathogenic <- function(
 	ll_pathogenic+ll_benign
 }
 
-#' Calculate marginal probability of observed genotypes under variant-level pathogenicity model by summing over marginals condintional on pathogenic variant combinations
+#' Calculate log lower bound for marginal probability of observations under model gamma = 1 by summing likelihood over pathogenic variant (Z) configurations, or probabilities that individual variants are pathogenic.
 #' 
 #' @template y
 #' @template G_matrix
 #' @template min_ac
+#' @param by_term Calculate probability that individual terms are pathogenic conditional on model gamma=1.
 #' @template q_shape
 #' @template p_shape
 #' @template omega_shape
 #' @param sum_over_variants Subset of variants for whose power set to calculate the direct sum over.
 #' @export
-lower_bound_P_v_by_direct_sum <- function(
+lower_bound_gamma1_evidence <- function(
 	y,
 	G,
-	min_ac=1,
+	min_ac=1L,
+	by_term=FALSE,
 	q_shape=c(2,100),
 	p_shape=c(10, 2),
 	omega_shape=c(2, 9),
 	sum_over_variants=1:nrow(G)
 ) {
-	sum(exp(apply(
-		as.matrix(do.call(what=expand.grid, rep(list(c(F,T)), length(sum_over_variants)))),
+	Z_confs <- as.matrix(do.call(what=expand.grid, rep(list(c(F,T)), length(sum_over_variants))))
+
+	log_pr_by_var <- apply(
+		Z_confs,
 		1,
 		function(Z) {
-			x_i <- apply(G[sum_over_variants[Z],,drop=FALSE], 2, function(variant_config) sum(variant_config) >= min_ac)
+			x_i <- apply(G[sum_over_variants[Z],,drop=FALSE], 2, function(variant_config) sum(variant_config)) >= min_ac
 			sig11 <- sum(x_i & y)
 			sig10 <- sum(x_i & !y)
 			sig01 <- sum(!x_i & y)
@@ -871,5 +884,20 @@ lower_bound_P_v_by_direct_sum <- function(
 			 	+ lbeta(omega_shape[1], omega_shape[2])
 			)
 		}
-	)))
+	)
+
+	if (by_term) {
+		apply(Z_confs, 2, function(x) sum(exp(log_pr_by_var[x]-max(log_pr_by_var))))/sum(exp(log_pr_by_var-max(log_pr_by_var)))
+	} else {
+		log(sum(exp(log_pr_by_var-max(log_pr_by_var))))+max(log_pr_by_var)
+	}
+}
+
+#' Calculate exact evidence for model gamma=1
+#'
+#' @template G_matrix
+#' @param ... Other arguments to pass to \code{\link{lower_bound_gamma1_evidence}}.
+#' @export
+exact_evidence <- function(G, ...) {
+	lower_bound_gamma1_evidence(G=G, sum_over_variants=1:nrow(G), ...)
 }

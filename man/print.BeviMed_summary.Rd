@@ -4,15 +4,12 @@
 \alias{print.BeviMed_summary}
 \title{Print readable summary of \code{BeviMed_summary} object.}
 \usage{
-\method{print}{BeviMed_summary}(x, print_Z = FALSE,
-  width = getOption("width"), ...)
+\method{print}{BeviMed_summary}(x, print_prob_pathogenic = TRUE, ...)
 }
 \arguments{
 \item{x}{\code{BeviMed_summary} object.}
 
-\item{print_Z}{Logical value indicating whether to print list of marginal probabilities of \code{Z_j = 1} for all variants \code{j}.}
-
-\item{width}{Width of printing.}
+\item{print_prob_pathogenic}{Logical value indicating whether to print list of marginal probabilities of \code{Z_j = 1} for all variants \code{j}.}
 
 \item{...}{Not-used arguments}
 }

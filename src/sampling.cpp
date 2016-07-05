@@ -1,17 +1,17 @@
 #include "sampling.h"
 
-List parallel_tempered_markov_chain(
+List bevimed_mc(
 	int its,
 	LogicalVector y,
 	IntegerVector var_block_start_index,
 	IntegerVector var_block_stop_index,
 	IntegerVector cases,
 	IntegerVector counts,
-	int min_ac,
-	double benign_shape1,
-	double benign_shape2,
-	double pathogenic_shape1,
-	double pathogenic_shape2,
+	IntegerVector min_ac,
+	double q_shape1,
+	double q_shape2,
+	double p_shape1,
+	double p_shape2,
 	double Z_shape1,
 	double Z_shape2,
 	LogicalMatrix Z0,
@@ -94,7 +94,7 @@ List parallel_tempered_markov_chain(
 		}
 
 		for (int i = 0; i < n; i++) {
-			x(temp, i) = pathogenic_var_count(temp, i) >= min_ac;
+			x(temp, i) = pathogenic_var_count(temp, i) >= min_ac[i];
 			count_x1[temp] += (int)x(temp, i);
 			if (y[i]) { 
 				count_y1x1[temp] += (int)x(temp, i);
@@ -103,25 +103,25 @@ List parallel_tempered_markov_chain(
 		}
 	}
 
-	NumericVector benign_shape1_gamma_table(n+1);
-	NumericVector benign_shape2_gamma_table(n+1);
-	NumericVector pathogenic_shape1_gamma_table(n+1);
-	NumericVector pathogenic_shape2_gamma_table(n+1);
-	NumericVector benign_total_gamma_table(n+1);
-	NumericVector pathogenic_total_gamma_table(n+1);
-	benign_shape1_gamma_table[0] = 0.0;
-	benign_shape2_gamma_table[0] = 0.0;
-	pathogenic_shape1_gamma_table[0] = 0.0;
-	pathogenic_shape2_gamma_table[0] = 0.0;
-	benign_total_gamma_table[0] = 0.0;
-	pathogenic_total_gamma_table[0] = 0.0;
+	NumericVector q1_tab(n+1);
+	NumericVector q2_tab(n+1);
+	NumericVector p1_tab(n+1);
+	NumericVector p2_tab(n+1);
+	NumericVector q_tot_tab(n+1);
+	NumericVector p_tot_tab(n+1);
+	q1_tab[0] = 0.0;
+	q2_tab[0] = 0.0;
+	p1_tab[0] = 0.0;
+	p2_tab[0] = 0.0;
+	q_tot_tab[0] = 0.0;
+	p_tot_tab[0] = 0.0;
 	for (int i = 1; i <= n; i++) {
-		benign_shape1_gamma_table[i] = benign_shape1_gamma_table[i-1] + log(i-1 + benign_shape1);
-		benign_shape2_gamma_table[i] = benign_shape2_gamma_table[i-1] + log(i-1 + benign_shape2);
-		pathogenic_shape1_gamma_table[i] = pathogenic_shape1_gamma_table[i-1] + log(i-1 + pathogenic_shape1);
-		pathogenic_shape2_gamma_table[i] = pathogenic_shape2_gamma_table[i-1] + log(i-1 + pathogenic_shape2);
-		benign_total_gamma_table[i] = benign_total_gamma_table[i-1] + log(i-1 + benign_shape1 + benign_shape2);
-		pathogenic_total_gamma_table[i] = pathogenic_total_gamma_table[i-1] + log(i-1 + pathogenic_shape1 + pathogenic_shape2);
+		q1_tab[i] = q1_tab[i-1] + log(i-1 + q_shape1);
+		q2_tab[i] = q2_tab[i-1] + log(i-1 + q_shape2);
+		p1_tab[i] = p1_tab[i-1] + log(i-1 + p_shape1);
+		p2_tab[i] = p2_tab[i-1] + log(i-1 + p_shape2);
+		q_tot_tab[i] = q_tot_tab[i-1] + log(i-1 + q_shape1 + q_shape2);
+		p_tot_tab[i] = p_tot_tab[i-1] + log(i-1 + p_shape1 + p_shape2);
 	}
 
 	NumericVector Z_shape1_gamma_table(k+1);
@@ -182,7 +182,7 @@ List parallel_tempered_markov_chain(
 
 				for (int i = var_block_start_index[v]; i < var_block_stop_index[v]; i++) {
 					int alt_pathogenic_var_count = pathogenic_var_count(chain_number, cases[i]) + (Z(chain_number, v) ? (-counts[i]) : counts[i]);
-					bool alt_x = alt_pathogenic_var_count >= min_ac;
+					bool alt_x = alt_pathogenic_var_count >= min_ac[cases[i]];
 					if (alt_x != x(chain_number, cases[i])) {
 						dx1 += (int)alt_x - (int)x(chain_number, cases[i]);
 						if (y[cases[i]]) dy1x1 += (int)alt_x - (int)x(chain_number, cases[i]);
@@ -210,12 +210,12 @@ List parallel_tempered_markov_chain(
 				double current_Zv_log_odds = 
 					+ Z_contribution
 					+ (
-						+ (benign_shape1_gamma_table[c_s01]-benign_shape1_gamma_table[u_s01])
-						+ (benign_shape2_gamma_table[c_s00]-benign_shape2_gamma_table[u_s00])
-						+ (pathogenic_shape1_gamma_table[c_s11]-pathogenic_shape1_gamma_table[u_s11])
-						+ (pathogenic_shape2_gamma_table[c_s10]-pathogenic_shape2_gamma_table[u_s10])
-						+ (benign_total_gamma_table[u_s01 + u_s00]-benign_total_gamma_table[c_s01 + c_s00])
-						+ (pathogenic_total_gamma_table[u_s11 + u_s10]-pathogenic_total_gamma_table[c_s11 + c_s10])
+						+ (q1_tab[c_s01]-q1_tab[u_s01])
+						+ (q2_tab[c_s00]-q2_tab[u_s00])
+						+ (p1_tab[c_s11]-p1_tab[u_s11])
+						+ (p2_tab[c_s10]-p2_tab[u_s10])
+						+ (q_tot_tab[u_s01 + u_s00]-q_tot_tab[c_s01 + c_s00])
+						+ (p_tot_tab[u_s11 + u_s10]-p_tot_tab[c_s11 + c_s10])
 					) * t[chain_temperature_reference[chain_number]] * annealing_factor
 				;
 
@@ -224,7 +224,7 @@ List parallel_tempered_markov_chain(
 					count_y1x1[chain_number] += dy1x1;
 					for (int i = var_block_start_index[v]; i < var_block_stop_index[v]; i++) {
 						pathogenic_var_count(chain_number, cases[i]) += (Z(chain_number, v) ? (-counts[i]) : counts[i]);
-						x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac;
+						x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac[cases[i]];
 					}
 					count_Z1[chain_number] += Z(chain_number, v) ? (-1) : 1;
 					Z(chain_number, v) = !Z(chain_number, v);
@@ -256,7 +256,7 @@ List parallel_tempered_markov_chain(
 
 					for (int i = var_block_start_index[v1]; i < var_block_stop_index[v1]; i++) {
 						int alt_pathogenic_var_count = pathogenic_var_count(chain_number, cases[i]) + (Z(chain_number, v1) ? (-counts[i]) : counts[i]);
-						bool alt_x = alt_pathogenic_var_count >= min_ac;
+						bool alt_x = alt_pathogenic_var_count >= min_ac[cases[i]];
 						if (alt_x != x(chain_number, cases[i])) {
 							v1_change_count_x1 += (int)alt_x - (int)x(chain_number, cases[i]);
 							if (y[cases[i]]) v1_change_count_y1x1 += (int)alt_x - (int)x(chain_number, cases[i]);
@@ -273,7 +273,7 @@ List parallel_tempered_markov_chain(
 
 					for (int i = var_block_start_index[v2]; i < var_block_stop_index[v2]; i++) {
 						int alt_pathogenic_var_count = pathogenic_var_count(chain_number, cases[i]) + (Z(chain_number, v2) ? (-counts[i]) : counts[i]);
-						bool alt_x = alt_pathogenic_var_count >= min_ac;
+						bool alt_x = alt_pathogenic_var_count >= min_ac[cases[i]];
 						if (alt_x != x(chain_number, cases[i])) {
 							v2_change_count_x1 += (int)alt_x - (int)x(chain_number, cases[i]);
 							if (y[cases[i]]) v2_change_count_y1x1 += (int)alt_x - (int)x(chain_number, cases[i]);
@@ -298,7 +298,7 @@ List parallel_tempered_markov_chain(
 						temporary_pathogenic_var_count[cases[i]] += (Z(chain_number, v2) ? (-counts[i]) : counts[i]);
 
 					for (int i = var_block_start_index[v1]; i < var_block_stop_index[v1]; i++) {
-						bool alt_x = temporary_pathogenic_var_count[cases[i]] >= min_ac;
+						bool alt_x = temporary_pathogenic_var_count[cases[i]] >= min_ac[cases[i]];
 						if ((!temporary_counted_indicator[cases[i]]) && (alt_x != x(chain_number, cases[i]))) {
 							v1_and_v2_change_count_x1 += (int)alt_x - (int)x(chain_number, cases[i]);
 							if (y[cases[i]]) v1_and_v2_change_count_y1x1 += (int)alt_x - (int)x(chain_number, cases[i]);
@@ -307,7 +307,7 @@ List parallel_tempered_markov_chain(
 					}
 
 					for (int i = var_block_start_index[v2]; i < var_block_stop_index[v2]; i++) {
-						bool alt_x = temporary_pathogenic_var_count[cases[i]] >= min_ac;
+						bool alt_x = temporary_pathogenic_var_count[cases[i]] >= min_ac[cases[i]];
 						if ((!temporary_counted_indicator[cases[i]]) && (alt_x != x(chain_number, cases[i]))) {
 							v1_and_v2_change_count_x1 += (int)alt_x - (int)x(chain_number, cases[i]);
 							if (y[cases[i]]) v1_and_v2_change_count_y1x1 += (int)alt_x - (int)x(chain_number, cases[i]);
@@ -332,12 +332,12 @@ List parallel_tempered_markov_chain(
 					double v1_change_odds_ratio = exp((
 						+ v1_Z_log_odds_favour_current 
 						+ (
-							+ (benign_shape1_gamma_table[no_change_s01]-benign_shape1_gamma_table[v1_change_s01])
-							+ (benign_shape2_gamma_table[no_change_s00]-benign_shape2_gamma_table[v1_change_s00])
-							+ (pathogenic_shape1_gamma_table[no_change_s11]-pathogenic_shape1_gamma_table[v1_change_s11])
-							+ (pathogenic_shape2_gamma_table[no_change_s10]-pathogenic_shape2_gamma_table[v1_change_s10])
-							+ (benign_total_gamma_table[v1_change_s01 + v1_change_s00]-benign_total_gamma_table[no_change_s01 + no_change_s00])
-							+ (pathogenic_total_gamma_table[v1_change_s11 + v1_change_s10]-pathogenic_total_gamma_table[no_change_s11 + no_change_s10])
+							+ (q1_tab[no_change_s01]-q1_tab[v1_change_s01])
+							+ (q2_tab[no_change_s00]-q2_tab[v1_change_s00])
+							+ (p1_tab[no_change_s11]-p1_tab[v1_change_s11])
+							+ (p2_tab[no_change_s10]-p2_tab[v1_change_s10])
+							+ (q_tot_tab[v1_change_s01 + v1_change_s00]-q_tot_tab[no_change_s01 + no_change_s00])
+							+ (p_tot_tab[v1_change_s11 + v1_change_s10]-p_tot_tab[no_change_s11 + no_change_s10])
 						) * t[chain_temperature_reference[chain_number]] * annealing_factor
 					) * (-1.0));
 
@@ -353,12 +353,12 @@ List parallel_tempered_markov_chain(
 					double v2_change_odds_ratio = exp((
 						+ v2_Z_log_odds_favour_current
 						+ (
-							+ (benign_shape1_gamma_table[no_change_s01]-benign_shape1_gamma_table[v2_change_s01])
-							+ (benign_shape2_gamma_table[no_change_s00]-benign_shape2_gamma_table[v2_change_s00])
-							+ (pathogenic_shape1_gamma_table[no_change_s11]-pathogenic_shape1_gamma_table[v2_change_s11])
-							+ (pathogenic_shape2_gamma_table[no_change_s10]-pathogenic_shape2_gamma_table[v2_change_s10])
-							+ (benign_total_gamma_table[v2_change_s01 + v2_change_s00]-benign_total_gamma_table[no_change_s01 + no_change_s00])
-							+ (pathogenic_total_gamma_table[v2_change_s11 + v2_change_s10]-pathogenic_total_gamma_table[no_change_s11 + no_change_s10])
+							+ (q1_tab[no_change_s01]-q1_tab[v2_change_s01])
+							+ (q2_tab[no_change_s00]-q2_tab[v2_change_s00])
+							+ (p1_tab[no_change_s11]-p1_tab[v2_change_s11])
+							+ (p2_tab[no_change_s10]-p2_tab[v2_change_s10])
+							+ (q_tot_tab[v2_change_s01 + v2_change_s00]-q_tot_tab[no_change_s01 + no_change_s00])
+							+ (p_tot_tab[v2_change_s11 + v2_change_s10]-p_tot_tab[no_change_s11 + no_change_s10])
 						) * t[chain_temperature_reference[chain_number]] * annealing_factor
 					) * (-1.0));
 
@@ -401,12 +401,12 @@ List parallel_tempered_markov_chain(
 					double v1_and_v2_change_odds_ratio = exp((
 						+ v1_and_v2_Z_log_odds_favour_current
 						+ (
-							+ (benign_shape1_gamma_table[no_change_s01]-benign_shape1_gamma_table[v1_and_v2_change_s01])
-							+ (benign_shape2_gamma_table[no_change_s00]-benign_shape2_gamma_table[v1_and_v2_change_s00])
-							+ (pathogenic_shape1_gamma_table[no_change_s11]-pathogenic_shape1_gamma_table[v1_and_v2_change_s11])
-							+ (pathogenic_shape2_gamma_table[no_change_s10]-pathogenic_shape2_gamma_table[v1_and_v2_change_s10])
-							+ (benign_total_gamma_table[v1_and_v2_change_s01 + v1_and_v2_change_s00]-benign_total_gamma_table[no_change_s01 + no_change_s00])
-							+ (pathogenic_total_gamma_table[v1_and_v2_change_s11 + v1_and_v2_change_s10]-pathogenic_total_gamma_table[no_change_s11 + no_change_s10])
+							+ (q1_tab[no_change_s01]-q1_tab[v1_and_v2_change_s01])
+							+ (q2_tab[no_change_s00]-q2_tab[v1_and_v2_change_s00])
+							+ (p1_tab[no_change_s11]-p1_tab[v1_and_v2_change_s11])
+							+ (p2_tab[no_change_s10]-p2_tab[v1_and_v2_change_s10])
+							+ (q_tot_tab[v1_and_v2_change_s01 + v1_and_v2_change_s00]-q_tot_tab[no_change_s01 + no_change_s00])
+							+ (p_tot_tab[v1_and_v2_change_s11 + v1_and_v2_change_s10]-p_tot_tab[no_change_s11 + no_change_s10])
 						) * t[chain_temperature_reference[chain_number]] * annealing_factor
 					) * (-1.0));
 
@@ -432,7 +432,7 @@ List parallel_tempered_markov_chain(
 							count_y1x1[chain_number] = v1_change_count_y1x1;
 							for (int i = var_block_start_index[v1]; i < var_block_stop_index[v1]; i++) {
 								pathogenic_var_count(chain_number, cases[i]) += (Z(chain_number, v1) ? (-counts[i]) : counts[i]);
-								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac;
+								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac[cases[i]];
 							}
 							count_Z1[chain_number] += Z(chain_number, v1) ? (-1) : 1;
 							Z(chain_number, v1) = !Z(chain_number, v1);
@@ -442,7 +442,7 @@ List parallel_tempered_markov_chain(
 							count_y1x1[chain_number] = v2_change_count_y1x1;
 							for (int i = var_block_start_index[v2]; i < var_block_stop_index[v2]; i++) {
 								pathogenic_var_count(chain_number, cases[i]) += (Z(chain_number, v2) ? (-counts[i]) : counts[i]);
-								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac;
+								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac[cases[i]];
 							}
 							count_Z1[chain_number] += Z(chain_number, v2) ? (-1) : 1;
 							Z(chain_number, v2) = !Z(chain_number, v2);
@@ -452,13 +452,13 @@ List parallel_tempered_markov_chain(
 							count_y1x1[chain_number] = v1_and_v2_change_count_y1x1;
 							for (int i = var_block_start_index[v1]; i < var_block_stop_index[v1]; i++) {
 								pathogenic_var_count(chain_number, cases[i]) = temporary_pathogenic_var_count[cases[i]];
-								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac;
+								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac[cases[i]];
 							}
 							count_Z1[chain_number] += Z(chain_number, v1) ? (-1) : 1;
 							Z(chain_number, v1) = !Z(chain_number, v1);
 							for (int i = var_block_start_index[v2]; i < var_block_stop_index[v2]; i++) {
 								pathogenic_var_count(chain_number, cases[i]) = temporary_pathogenic_var_count[cases[i]];
-								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac;
+								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac[cases[i]];
 							}
 							count_Z1[chain_number] += Z(chain_number, v2) ? (-1) : 1;
 							Z(chain_number, v2) = !Z(chain_number, v2);
@@ -495,21 +495,21 @@ List parallel_tempered_markov_chain(
 
 
 				double chain1_y_log_lik_t_equals_1 =
-					+ (benign_shape1_gamma_table[s01_1]-benign_shape1_gamma_table[0])
-					+ (benign_shape2_gamma_table[s00_1]-benign_shape2_gamma_table[0])
-					+ (pathogenic_shape1_gamma_table[s11_1]-pathogenic_shape1_gamma_table[0])
-					+ (pathogenic_shape2_gamma_table[s10_1]-pathogenic_shape2_gamma_table[0])
-					+ (benign_total_gamma_table[0 + 0]-benign_total_gamma_table[s01_1 + s00_1])
-					+ (pathogenic_total_gamma_table[0 + 0]-pathogenic_total_gamma_table[s11_1 + s10_1])
+					+ (q1_tab[s01_1]-q1_tab[0])
+					+ (q2_tab[s00_1]-q2_tab[0])
+					+ (p1_tab[s11_1]-p1_tab[0])
+					+ (p2_tab[s10_1]-p2_tab[0])
+					+ (q_tot_tab[0 + 0]-q_tot_tab[s01_1 + s00_1])
+					+ (p_tot_tab[0 + 0]-p_tot_tab[s11_1 + s10_1])
 				;
 				
 				double chain2_y_log_lik_t_equals_1 =
-					+ (benign_shape1_gamma_table[s01_2]-benign_shape1_gamma_table[0])
-					+ (benign_shape2_gamma_table[s00_2]-benign_shape2_gamma_table[0])
-					+ (pathogenic_shape1_gamma_table[s11_2]-pathogenic_shape1_gamma_table[0])
-					+ (pathogenic_shape2_gamma_table[s10_2]-pathogenic_shape2_gamma_table[0])
-					+ (benign_total_gamma_table[0 + 0]-benign_total_gamma_table[s01_2 + s00_2])
-					+ (pathogenic_total_gamma_table[0 + 0]-pathogenic_total_gamma_table[s11_2 + s10_2])
+					+ (q1_tab[s01_2]-q1_tab[0])
+					+ (q2_tab[s00_2]-q2_tab[0])
+					+ (p1_tab[s11_2]-p1_tab[0])
+					+ (p2_tab[s10_2]-p2_tab[0])
+					+ (q_tot_tab[0 + 0]-q_tot_tab[s01_2 + s00_2])
+					+ (p_tot_tab[0 + 0]-p_tot_tab[s11_2 + s10_2])
 				;
 
 				
@@ -546,12 +546,12 @@ List parallel_tempered_markov_chain(
 			int s10 = count_x1[chain_number] - count_y1x1[chain_number];
 
 			y_log_lik_t_equals_1 =
-				+ (benign_shape1_gamma_table[s01]-benign_shape1_gamma_table[0])
-				+ (benign_shape2_gamma_table[s00]-benign_shape2_gamma_table[0])
-				+ (pathogenic_shape1_gamma_table[s11]-pathogenic_shape1_gamma_table[0])
-				+ (pathogenic_shape2_gamma_table[s10]-pathogenic_shape2_gamma_table[0])
-				+ (benign_total_gamma_table[0 + 0]-benign_total_gamma_table[s01 + s00])
-				+ (pathogenic_total_gamma_table[0 + 0]-pathogenic_total_gamma_table[s11 + s10])
+				+ (q1_tab[s01]-q1_tab[0])
+				+ (q2_tab[s00]-q2_tab[0])
+				+ (p1_tab[s11]-p1_tab[0])
+				+ (p2_tab[s10]-p2_tab[0])
+				+ (q_tot_tab[0 + 0]-q_tot_tab[s01 + s00])
+				+ (p_tot_tab[0 + 0]-p_tot_tab[s11 + s10])
 			;
 
 			double y_log_lik = t[chain_temperature_reference[chain_number]] * y_log_lik_t_equals_1 * annealing_factor;

@@ -2,7 +2,7 @@
 
 using namespace Rcpp;
 
-RcppExport SEXP R_parallel_tempered_markov_chain(
+RcppExport SEXP R_bevimed_mc(
 	SEXP its, 
 	SEXP y, 
 	SEXP var_block_start_index, 
@@ -10,10 +10,10 @@ RcppExport SEXP R_parallel_tempered_markov_chain(
 	SEXP cases, 
 	SEXP counts, 
 	SEXP min_ac, 
-	SEXP null_shape1, 
-	SEXP null_shape2, 
-	SEXP patho_shape1, 
-	SEXP patho_shape2, 
+	SEXP q_shape1, 
+	SEXP q_shape2, 
+	SEXP p_shape1, 
+	SEXP p_shape2, 
 	SEXP Z_shape1, 
 	SEXP Z_shape2, 
 	SEXP Z0,
@@ -36,18 +36,18 @@ RcppExport SEXP R_parallel_tempered_markov_chain(
 	SEXP store_Z_trace
 ) {
 BEGIN_RCPP
-	return parallel_tempered_markov_chain(
+	return bevimed_mc(
 		as<int>(its),
 		as<LogicalVector>(y),
 		as<IntegerVector>(var_block_start_index),
 		as<IntegerVector>(var_block_stop_index),
 		as<IntegerVector>(cases),
 		as<IntegerVector>(counts),
-		as<int>(min_ac),
-		as<double>(null_shape1),
-		as<double>(null_shape2),
-		as<double>(patho_shape1),
-		as<double>(patho_shape2),
+		as<IntegerVector>(min_ac),
+		as<double>(q_shape1),
+		as<double>(q_shape2),
+		as<double>(p_shape1),
+		as<double>(p_shape2),
 		as<double>(Z_shape1),
 		as<double>(Z_shape2),
 		as<LogicalMatrix>(Z0),

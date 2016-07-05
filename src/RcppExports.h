@@ -8,7 +8,7 @@
 using namespace Rcpp;
 using namespace std;
 
-RcppExport SEXP R_parallel_tempered_markov_chain(
+RcppExport SEXP R_bevimed_mc(
 	SEXP its, 
 	SEXP y, 
 	SEXP var_block_start_index, 
@@ -16,10 +16,10 @@ RcppExport SEXP R_parallel_tempered_markov_chain(
 	SEXP cases, 
 	SEXP counts, 
 	SEXP min_ac, 
-	SEXP null_shape1, 
-	SEXP null_shape2, 
-	SEXP patho_shape1, 
-	SEXP patho_shape2, 
+	SEXP q_shape1, 
+	SEXP q_shape2, 
+	SEXP p_shape1, 
+	SEXP p_shape2, 
 	SEXP Z_shape1, 
 	SEXP Z_shape2, 
 	SEXP Z0,

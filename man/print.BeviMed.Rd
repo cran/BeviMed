@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{\code{BeviMed_summary} object.}
 
-\item{...}{Not-used arguments}
+\item{...}{Arguments passed to \code{\link{summary.BeviMed}}}
 }
 \value{
 Prints a summary

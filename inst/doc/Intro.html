@@ -10,7 +10,7 @@
 
 <meta name="author" content="Daniel Greene" />
 
-<meta name="date" content="2016-05-02" />
+<meta name="date" content="2016-07-05" />
 
 <title>BeviMed Introduction</title>
 
@@ -54,77 +54,81 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <div id="header">
 <h1 class="title">BeviMed Introduction</h1>
 <h4 class="author"><em>Daniel Greene</em></h4>
-<h4 class="date"><em>2016-05-02</em></h4>
+<h4 class="date"><em>2016-07-05</em></h4>
 </div>
 
 
-<p><code>BeviMed</code> has a function <code>bevimed</code> for performing <em>Bayesian Evaluation of Variant Involvement in Mendelian Disease</em>. The aim is to estimate the probability of an association between individual configurations of a restricted set of variants and a case-control label, and conditional on the association, the probabilities of pathogenicity for individual variants.</p>
-<p><code>bevimed</code> is an MCMC sampling procedure with many parameters, including the data <code>y</code> (a <code>logical</code> vector), a <code>k</code> by <code>N</code> matrix of variant-level genotypes <code>G</code> (where <code>length(y) == nrow(G)</code>), a mode of inheritance hypothesis encoded as an integer (minimum number of alleles required for affection) <code>min_ac</code>, and others determining the sampling management and prior distributions of the model parameters.</p>
-<p>It returns a list of traces for the sampled parameters in an object of class <code>BeviMed</code>. This object can take up a lot of, and hence it may be preferable to store a summarised version by passing it to <code>summary</code>.</p>
-<p>Quantities of interest can also be computed directly from the parameters - for example via the function <code>log BF</code>, returning a log Bayes factor between the variant-level model for case-control status and a baseline model whereby there is no association between variants in the region and case-control status - or the function <code>probability_pathogenic</code> a probability of association given some prior probability.</p>
+<p><code>BeviMed</code> provides functions for performing <em>Bayesian Evaluation of Variant Involvement in Mendelian Disease</em>. The aim is to estimate the probability of an association between a latent configuration of a restricted set of variants and a case-control label, and conditional on the association, the probabilities of pathogenicity for individual variants.</p>
+<p>The inference is carried out based on the inputs:</p>
+<ul>
+<li>case-control label <code>y</code>, a length <code>N</code> (number of samples) <code>logical</code> vector,</li>
+<li>genotype matrix <code>G</code>, a <code>k</code> by <code>N</code> integer matrix of allele counts,</li>
+<li>a minimum allele count <code>min_ac</code>, representing a mode of inheritance hypothesis (i.e. minimum number of pathogenic variants required to be considered to have a <em>pathogenic configuration</em> of variants).</li>
+</ul>
+<p>Then, depending on the quantity of interest, the inference procedure can be invoked simply by passing the above arguments to the functions:</p>
+<ul>
+<li><code>prob_association</code> - returning the probability of association between configurations of variants represented in <code>G</code> and the case-control label <code>y</code> (optionally broken down by mode of inheritance),</li>
+<li><code>log_BF</code> - the log Bayes factor between the association model and no-association model,</li>
+<li><code>prob_pathogenic</code> - the probabilities of pathogenicity for the individual variants.</li>
+</ul>
+<p>The inference is performed by the function <code>bevimed</code>, an MCMC sampling procedure with many parameters, including those listed above and others determining the sampling management and prior distributions of the model parameters.</p>
+<p>It returns a list of traces for the sampled parameters in an object of class <code>BeviMed</code>. This object can take up a lot of memory, so it may be preferable to store a summarised version passed to <code>summary</code>.</p>
+<p>Here we demonstrate a simple application of BeviMed for some simulated examples.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(BeviMed)
 <span class="kw">set.seed</span>(<span class="dv">0</span>)</code></pre>
-<p>Firstly, we’ll generate some random data consisting of a disease affection status, <code>y</code> and a variant-wise indicator of pathogenicity, <code>Z</code>, where <code>Z[i] == TRUE</code> if variant <code>i</code> is pathogenic and <code>FALSE</code> otherwise.</p>
+<p>Firstly, we’ll generate some random data consisting of a case-control label, <code>y</code> and a variant-wise indicator of pathogenicity, <code>Z</code>, where <code>Z[i] == TRUE</code> if variant <code>i</code> is pathogenic and <code>FALSE</code> otherwise.</p>
+<p>In <code>y</code>, we will represent 100 samples, the first 20 of whom are cases and the next 80 of whom are controls, and in <code>Z</code> we will represent 20 SNPs at which the samples are to be genotyped, of which the first 3 are pathogenic and of which the next 17 are benign.</p>
 <pre class="sourceCode r"><code class="sourceCode r">y &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="ot">TRUE</span>, <span class="dv">20</span>), <span class="kw">rep</span>(<span class="ot">FALSE</span>, <span class="dv">80</span>))
-Z &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="ot">TRUE</span>, <span class="dv">3</span>), <span class="kw">rep</span>(<span class="ot">FALSE</span>, <span class="dv">20</span>))</code></pre>
-<p>In the first application, we’ll use variant matrix <code>G1</code> where there is no association between <code>y</code> and the variants.</p>
+Z &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="ot">TRUE</span>, <span class="dv">3</span>), <span class="kw">rep</span>(<span class="ot">FALSE</span>, <span class="dv">17</span>))</code></pre>
+<p>In the first application, we’ll use variant matrix <code>G1</code> where there is no association between <code>y</code> and the variants (i.e. we simulated all genotypes at random).</p>
 <pre class="sourceCode r"><code class="sourceCode r">G1 &lt;-<span class="st"> </span><span class="kw">sapply</span>(y, function(y_i) <span class="kw">as.integer</span>(<span class="kw">runif</span>(<span class="dt">n=</span><span class="kw">length</span>(Z)) &lt;<span class="st"> </span><span class="fl">0.15</span>))
 
-<span class="kw">probability_pathogenic</span>(<span class="dt">G=</span>G1, <span class="dt">y=</span>y)</code></pre>
-<pre><code>## [1] 0.06988054</code></pre>
-<p>The results indicate that there is little preference for model <span class="math">\(v\)</span> over model <span class="math">\(n\)</span>. In the example <em>with</em> association, we’ll sample the allele counts based on <code>y</code>.</p>
+<span class="kw">prob_association</span>(<span class="dt">G=</span>G1, <span class="dt">y=</span>y)</code></pre>
+<pre><code>## [1] 0.01511634</code></pre>
+<p>The results indicate that there is a low probability of association (by default a prior probability of <code>0.01</code> with each mode of inheritance is used). In the example <em>with</em> association, we’ll sample the allele counts based on <code>y</code> (i.e. for the cases we’ll include a random pathogenic variant amongst the observed genotypes).</p>
 <pre class="sourceCode r"><code class="sourceCode r">G2 &lt;-<span class="st"> </span><span class="kw">sapply</span>(y, function(y_i) <span class="kw">as.integer</span>(<span class="kw">runif</span>(<span class="dt">n=</span><span class="kw">length</span>(Z)) &lt;<span class="st"> </span><span class="fl">0.15</span> |<span class="st"> </span>
 <span class="st">    </span>(if (y_i) <span class="dv">1</span>:<span class="kw">length</span>(Z) ==<span class="st"> </span><span class="kw">sample</span>(<span class="kw">which</span>(Z), <span class="dt">size=</span><span class="dv">1</span>) else <span class="kw">rep</span>(<span class="ot">FALSE</span>, <span class="kw">length</span>(Z)))))
 
-<span class="kw">probability_pathogenic</span>(<span class="dt">G=</span>G2, <span class="dt">y=</span>y)</code></pre>
-<pre><code>## [1] 0.9999853</code></pre>
-<p>For a more detailed output (containing the variant-level probabilities of pathogenicity), the <code>bevimed</code> function can be called, summarised and stored.</p>
+<span class="kw">prob_association</span>(<span class="dt">G=</span>G2, <span class="dt">y=</span>y)</code></pre>
+<pre><code>## [1] 0.9987681</code></pre>
+<p>Notice that there is now a higher estimated probability of association.</p>
+<p>By default, <code>prob_association</code> integrates over mode of inheritance (e.g. are at least 1 or 2 pathogenic variants required for a pathogenic configuration?). The probabilities of association with each mode of inheritance can by shown by passing the option <code>by_MOI=TRUE</code> (for more details, including how to set the ploidy of the samples within the region, see <code>?prob_pathogenic</code>).</p>
+<p>For a more detailed output, the <code>bevimed</code> function can be used, and it’s returned values can be summarised and stored/printed.</p>
 <pre class="sourceCode r"><code class="sourceCode r">output &lt;-<span class="st"> </span><span class="kw">summary</span>(<span class="kw">bevimed</span>(<span class="dt">G=</span>G2, <span class="dt">y=</span>y))
-
 output</code></pre>
 <pre><code>## --------------------------------------------------------------------------- 
-## Log Bayes factor between variant level model and null model is 13.94
+## The probability of association is 1 [prior: 0.01]
 ## 
-## A confidence interval for the estimate is:
-##  2.5% 97.5% 
-## 13.26 14.49 
-## ---------------------------------------------------------------------------</code></pre>
-<p>Note that now the estimated log Bayes factor in favour of the variant-level model is high. Furthermore, we can use <code>print</code> passing the option <code>print_Z=TRUE</code> to print a summary of the results containing the variant-level probabilities of pathogenicity.</p>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(output, <span class="dt">print_Z=</span><span class="ot">TRUE</span>)</code></pre>
-<pre><code>## --------------------------------------------------------------------------- 
-## Log Bayes factor between variant level model and null model is 13.94
+## Log Bayes factor between gamma 1 model and gamma 0 model is 11.16
 ## 
-## A confidence interval for the estimate is:
+## A confidence interval for the log Bayes factor is:
 ##  2.5% 97.5% 
-## 13.26 14.49 
+## 10.41 11.81 
 ## --------------------------------------------------------------------------- 
 ## Estimated probabilities of pathogenicity of individual variants
-## (conditional on model v)
+## (conditional on gamma = 1)
 ## 
-##  Variant Controls Cases P(Z_j=1|y,V)              Bar Chart
-##        1       15     8         0.99 [=================== ]
-##        2       10    11         1.00 [====================]
-##        3        6     5         0.92 [==================  ]
-##        4       12     8         0.00 [                    ]
-##        5       15     3         0.00 [                    ]
-##        6       11     1         0.00 [                    ]
-##        7       14     5         0.00 [                    ]
-##        8       15     3         0.00 [                    ]
-##        9       15     2         0.00 [                    ]
-##       10        8     2         0.01 [                    ]
-##       11       15     2         0.00 [                    ]
-##       12        8     4         0.01 [                    ]
-##       13       13     1         0.00 [                    ]
-##       14        9     3         0.04 [                    ]
-##       15       10     3         0.00 [                    ]
-##       16       16     1         0.00 [                    ]
-##       17       14     2         0.00 [                    ]
-##       18       13     3         0.00 [                    ]
-##       19       12     1         0.00 [                    ]
-##       20       17     2         0.00 [                    ]
-##       21       13     7         0.00 [                    ]
-##       22       10     3         0.01 [                    ]
-##       23       15     6         0.00 [                    ]</code></pre>
+##  Variant Controls Cases P(Z_j=1|y,gamma=1)              Bar Chart
+##        1        9     7               1.00 [=================== ]
+##        2       17     9               1.00 [====================]
+##        3       10     6               1.00 [====================]
+##        4       12     2               0.00 [                    ]
+##        5       14     2               0.00 [                    ]
+##        6       11     4               0.01 [                    ]
+##        7       12     4               0.01 [                    ]
+##        8       13     2               0.01 [                    ]
+##        9       11     2               0.00 [                    ]
+##       10       12     4               0.00 [                    ]
+##       11       11     4               0.01 [                    ]
+##       12       10     4               0.00 [                    ]
+##       13       16     5               0.00 [                    ]
+##       14        8     4               0.01 [                    ]
+##       15       16     4               0.00 [                    ]
+##       16       11     1               0.01 [                    ]
+##       17       14     2               0.00 [                    ]
+##       18       14     1               0.01 [                    ]
+##       19       11     3               0.00 [                    ]
+##       20        7     2               0.01 [                    ]</code></pre>
 
 
 

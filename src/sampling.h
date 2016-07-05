@@ -36,18 +36,18 @@ inline double logit_beta(
 	double value
 ){ return value - 2.0 * log(1.0 + exp(value)) + log(R::dbeta(expit(value), shape1, shape2, true)); }
 
-List parallel_tempered_markov_chain(
+List bevimed_mc(
 	int its,
 	LogicalVector y,
 	IntegerVector var_block_start_index,
 	IntegerVector var_block_stop_index,
 	IntegerVector cases,
 	IntegerVector counts,
-	int min_ac,
-	double benign_shape1,
-	double benign_shape2,
-	double pathogenic_shape1,
-	double pathogenic_shape2,
+	IntegerVector min_ac,
+	double q_shape1,
+	double q_shape2,
+	double p_shape1,
+	double p_shape2,
 	double Z_shape1,
 	double Z_shape2,
 	LogicalMatrix Z0,
