@@ -2,30 +2,30 @@
 % Please edit documentation in R/functions.R
 \name{lower_bound_gamma1_evidence}
 \alias{lower_bound_gamma1_evidence}
-\title{Calculate log lower bound for marginal probability of observations under model gamma = 1 by summing likelihood over pathogenic variant (Z) configurations, or probabilities that individual variants are pathogenic.}
+\title{Calculate log lower bound for marginal probability of observations under model gamma = 1 by summing likelihood over pathogenic variant (z) configurations, or probabilities that individual variants are pathogenic.}
 \usage{
 lower_bound_gamma1_evidence(y, G, min_ac = 1L, by_term = FALSE,
-  q_shape = c(2, 100), p_shape = c(10, 2), omega_shape = c(2, 9),
-  sum_over_variants = 1:nrow(G))
+  tau_shape = c(1, 1), pi_shape = c(6, 1), omega_shape = c(2, 8),
+  sum_over_variants = seq(ncol(G)))
 }
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
 
-\item{G}{Integer matrix of variant counts per individual, one column per individual and one row per variant.}
+\item{G}{Integer matrix of variant counts per individual, one row per individual and one column per variant.}
 
 \item{min_ac}{Minimum allele count per individual to be considered to have a pathogenic combination of variants. '1' could correspond to a dominant inheritance hypothesis whereas '2' could correspond to a recessive inheritance hypothesis. Can either be an integer value (then used for all samples), or integer vector of \code{length(y)}, useful for example when different samples have different ploidy.}
 
 \item{by_term}{Calculate probability that individual terms are pathogenic conditional on model gamma=1.}
 
-\item{q_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with non-pathogenic variant combinations (i.e. they have less than \code{min_ac} variants.}
+\item{tau_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with non-pathogenic variant combinations (i.e. they have less than \code{min_ac} variants.}
 
-\item{p_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with pathogenic variant combinations (i.e. they have at least \code{min_ac} variants.}
+\item{pi_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with pathogenic variant combinations (i.e. they have at least \code{min_ac} variants.}
 
 \item{omega_shape}{Beta shape hyper-priors for prior on rate of pathogenicity amongst variants.}
 
 \item{sum_over_variants}{Subset of variants for whose power set to calculate the direct sum over.}
 }
 \description{
-Calculate log lower bound for marginal probability of observations under model gamma = 1 by summing likelihood over pathogenic variant (Z) configurations, or probabilities that individual variants are pathogenic.
+Calculate log lower bound for marginal probability of observations under model gamma = 1 by summing likelihood over pathogenic variant (z) configurations, or probabilities that individual variants are pathogenic.
 }
 

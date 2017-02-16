@@ -7,7 +7,7 @@
 \method{print}{BeviMed}(x, ...)
 }
 \arguments{
-\item{x}{\code{BeviMed_summary} object.}
+\item{x}{\code{BeviMed} object.}
 
 \item{...}{Arguments passed to \code{\link{summary.BeviMed}}}
 }

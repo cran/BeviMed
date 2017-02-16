@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{\code{BeviMed_summary} object.}
 
-\item{print_prob_pathogenic}{Logical value indicating whether to print list of marginal probabilities of \code{Z_j = 1} for all variants \code{j}.}
+\item{print_prob_pathogenic}{Logical value indicating whether to print list of marginal probabilities of \code{z_j = 1} for all variants \code{j}.}
 
 \item{...}{Not-used arguments}
 }

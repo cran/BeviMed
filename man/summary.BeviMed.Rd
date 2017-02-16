@@ -5,7 +5,7 @@
 \title{Create summary of \code{BeviMed} classed-object}
 \usage{
 \method{summary}{BeviMed}(object, gamma1_prior = 0.01,
-  gamma0_shape = object[["q_shape"]], confidence = 0.95,
+  tau0_shape = object[["tau_shape"]], confidence = 0.95,
   simulations = 1000, ...)
 }
 \arguments{
@@ -13,7 +13,7 @@
 
 \item{gamma1_prior}{Prior probability of that gamma = 1.}
 
-\item{gamma0_shape}{Beta shape hyper-priors for prior on rate of case labels.}
+\item{tau0_shape}{Beta shape hyper-priors for prior on rate of case labels.}
 
 \item{confidence}{Numeric value of statistical confidence with which returning interval should contain the true value.}
 

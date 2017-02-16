@@ -4,9 +4,9 @@
 \alias{stop_chain}
 \title{Apply the MCMC algorithm in blocks until conditions are met}
 \usage{
-stop_chain(y, blocks_remaining, start_Zs, start_logit_omegas, start_log_phis,
+stop_chain(y, blocks_remaining, start_zs, start_logit_omegas, start_log_phis,
   temperatures, tolerance = 1, confidence = 0.95, simulations = 1000,
-  gamma0_shape = c(2, 100), quit_if_highest_possible_BF_less_than = -Inf,
+  tau0_shape = c(1, 1), BF_threshold = -Inf,
   y_log_lik_t_equals_1_traces = matrix(ncol = length(temperatures), nrow = 0),
   full_block_traces = list(), verbose = FALSE, ...)
 }
@@ -15,7 +15,7 @@ stop_chain(y, blocks_remaining, start_Zs, start_logit_omegas, start_log_phis,
 
 \item{blocks_remaining}{Maximum number of blocks left before termination.}
 
-\item{start_Zs}{Initial (logical) Z-matrix.}
+\item{start_zs}{Initial (logical) z-matrix.}
 
 \item{start_logit_omegas}{Initial values of logit_omega (numeric vector - one value per chain).}
 
@@ -29,9 +29,9 @@ stop_chain(y, blocks_remaining, start_Zs, start_logit_omegas, start_log_phis,
 
 \item{simulations}{Integer value of number of simulations to use in estimation of the confidence interval.}
 
-\item{gamma0_shape}{Beta shape hyper-priors for prior on rate of case labels.}
+\item{tau0_shape}{Beta shape hyper-priors for prior on rate of case labels.}
 
-\item{quit_if_highest_possible_BF_less_than}{Numeric value used to determine whether to stop the sampling after consecutive blocks. If we are confident (to the extent given by the parameter \code{confidence}) that log Bayes factor of v against n is under this value, we stop the sampling as soon as possible.}
+\item{BF_threshold}{Numeric value used to determine whether to stop the sampling procedure after successive blocks. If we are confident (to the level of \code{confidence}) that the log Bayes factor between models gamma = 1 and gamma = 0 is under this value, we stop the sampling as soon as possible.}
 
 \item{y_log_lik_t_equals_1_traces}{Numeric matrix of log probabilities of \code{y} at different temperatures (columns) in different iterations (rows).}
 

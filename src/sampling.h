@@ -36,6 +36,7 @@ inline double logit_beta(
 	double value
 ){ return value - 2.0 * log(1.0 + exp(value)) + log(R::dbeta(expit(value), shape1, shape2, true)); }
 
+// [[Rcpp::export]]
 List bevimed_mc(
 	int its,
 	LogicalVector y,
@@ -44,17 +45,17 @@ List bevimed_mc(
 	IntegerVector cases,
 	IntegerVector counts,
 	IntegerVector min_ac,
-	double q_shape1,
-	double q_shape2,
-	double p_shape1,
-	double p_shape2,
-	double Z_shape1,
-	double Z_shape2,
-	LogicalMatrix Z0,
-	bool estimate_logit_Z_rate,
-	NumericVector logit_Z_rates,
-	NumericVector logit_Z_rate_proposal_sds,
-	NumericVector Z_weights,
+	double tau_shape1,
+	double tau_shape2,
+	double pi_shape1,
+	double pi_shape2,
+	double z_shape1,
+	double z_shape2,
+	LogicalMatrix z0,
+	bool estimate_logit_z_rate,
+	NumericVector logit_z_rates,
+	NumericVector logit_z_rate_proposal_sds,
+	NumericVector z_weights,
 	bool estimate_phi,
 	NumericVector log_phis,
 	double log_phi_mean,
@@ -67,7 +68,8 @@ List bevimed_mc(
 	IntegerVector y1_case_block_start_index,
 	IntegerVector y1_case_block_stop_index,
 	IntegerVector y1_variants,
-	bool store_Z_trace
+	bool return_z_trace,
+	bool return_x_trace
 );
 
 #endif

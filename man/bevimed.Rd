@@ -4,27 +4,28 @@
 \alias{bevimed}
 \title{Perform inference under model gamma = 1}
 \usage{
-bevimed(y, G, min_ac = 1L, q_shape = c(2, 100), p_shape = c(10, 2),
-  omega_shape = if (max(min_ac) == 1L) c(2, 9) else c(2, 2),
-  samples_per_chain = 2000, stop_early = FALSE, blocks = 5,
-  burn = as.integer(samples_per_chain/10), temperatures = (0:10/10)^2,
-  tune_temps = 0, store_Z_trace = TRUE,
-  swaps = as.integer(length(temperatures)/2), optimise_Z0 = FALSE,
+bevimed(y, G, min_ac = 1L, tau_shape = c(1, 1), pi_shape = c(6, 1),
+  omega_shape = if (max(min_ac) == 1L) c(2, 8) else c(2, 2),
+  samples_per_chain = 1000, stop_early = FALSE, blocks = 5,
+  burn = as.integer(samples_per_chain/10), temperatures = (0:6/6)^2,
+  tune_temps = 0, return_z_trace = TRUE, return_x_trace = FALSE,
+  swaps = as.integer(length(temperatures)/2), optimise_z0 = FALSE,
   tune_omega_and_phi_proposal_sd = FALSE, tune_block_size = 100,
-  variant_weights = NULL, log_phi_mean = -1.5, log_phi_sd = 1,
+  variant_weights = NULL, standardise_weights = TRUE,
+  log_phi_mean = -0.15, log_phi_sd = sqrt(0.3),
   tandem_variant_updates = if (max(min_ac) == 1) 0 else min(sum(y), nrow(G)),
   ...)
 }
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
 
-\item{G}{Integer matrix of variant counts per individual, one column per individual and one row per variant.}
+\item{G}{Integer matrix of variant counts per individual, one row per individual and one column per variant.}
 
 \item{min_ac}{Minimum allele count per individual to be considered to have a pathogenic combination of variants. '1' could correspond to a dominant inheritance hypothesis whereas '2' could correspond to a recessive inheritance hypothesis. Can either be an integer value (then used for all samples), or integer vector of \code{length(y)}, useful for example when different samples have different ploidy.}
 
-\item{q_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with non-pathogenic variant combinations (i.e. they have less than \code{min_ac} variants.}
+\item{tau_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with non-pathogenic variant combinations (i.e. they have less than \code{min_ac} variants.}
 
-\item{p_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with pathogenic variant combinations (i.e. they have at least \code{min_ac} variants.}
+\item{pi_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with pathogenic variant combinations (i.e. they have at least \code{min_ac} variants.}
 
 \item{omega_shape}{Beta shape hyper-priors for prior on rate of pathogenicity amongst variants.}
 
@@ -40,17 +41,21 @@ bevimed(y, G, min_ac = 1L, q_shape = c(2, 100), p_shape = c(10, 2),
 
 \item{tune_temps}{Integer value - if greater than 0, the \code{temperatures} argument is ignored, and instead \code{tune_temps} tuned temperatures are used instead.}
 
-\item{store_Z_trace}{Logical value determining whether to store the Z-vectors for each chain, which uses alot of memory, particularly if \code{samples_per_chain}, k and \code{length(temperatures)} are high.}
+\item{return_z_trace}{Logical value determining whether to store the z-vectors for each chain, which uses alot of memory, particularly if \code{samples_per_chain}, k and \code{length(temperatures)} are large.}
+
+\item{return_x_trace}{Logical value determining whether to store the x variable determined by success samples of z. Potentially uses alot of memory, particularly if \code{samples_per_chain}, k and \code{length(temperatures)} are large.}
 
 \item{swaps}{Number of swaps between adjacent tempered chains to perform per update cycle.}
 
-\item{optimise_Z0}{Logical value determining whether to use a simulated annealing optimisation run to tune the initial values of \code{Z}.}
+\item{optimise_z0}{Logical value determining whether to use a simulated annealing optimisation run to tune the initial values of \code{z}.}
 
 \item{tune_omega_and_phi_proposal_sd}{Logical value determining whether the proposal SDs of the Metropolis-Hastings estimated parameters should be tuned for a target acceptance range.}
 
 \item{tune_block_size}{Integer value giving number of samples to draw when estimatating the acceptance rate of the omega/phi proposals.}
 
 \item{variant_weights}{Vector of log-odds off-sets for rates of pathogenicity of individual variants relative to the global rate, omega.}
+
+\item{standardise_weights}{Boolean value determining whether weights should be standardised by subtracting their mean and dividing by their sample standard deviation. If \code{FALSE}, weights are untransformed.}
 
 \item{log_phi_mean}{Mean for normal prior on scaling factor phi.}
 

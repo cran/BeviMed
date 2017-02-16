@@ -8,17 +8,17 @@ List bevimed_mc(
 	IntegerVector cases,
 	IntegerVector counts,
 	IntegerVector min_ac,
-	double q_shape1,
-	double q_shape2,
-	double p_shape1,
-	double p_shape2,
-	double Z_shape1,
-	double Z_shape2,
-	LogicalMatrix Z0,
-	bool estimate_logit_Z_rate,
-	NumericVector logit_Z_rates,
-	NumericVector logit_Z_rate_proposal_sds,
-	NumericVector Z_weights,
+	double tau_shape1,
+	double tau_shape2,
+	double pi_shape1,
+	double pi_shape2,
+	double z_shape1,
+	double z_shape2,
+	LogicalMatrix z0,
+	bool estimate_logit_z_rate,
+	NumericVector logit_z_rates,
+	NumericVector logit_z_rate_proposal_sds,
+	NumericVector z_weights,
 	bool estimate_phi,
 	NumericVector log_phis,
 	double log_phi_mean,
@@ -31,12 +31,11 @@ List bevimed_mc(
 	IntegerVector y1_case_block_start_index,
 	IntegerVector y1_case_block_stop_index,
 	IntegerVector y1_variants,
-	bool store_Z_trace
+	bool return_z_trace,
+	bool return_x_trace
 ) {
-	RNGScope scope;
-	
-	double logit_Z_rate_mean = Z_shape1;
-	double logit_Z_rate_sd = Z_shape2;
+	double logit_z_rate_mean = z_shape1;
+	double logit_z_rate_sd = z_shape2;
 
 	int n = y.length();
 
@@ -51,22 +50,23 @@ List bevimed_mc(
 		temperature_chain_reference[temp] = temp;
 	}
 
-	LogicalMatrix Z_trace(store_Z_trace ? its : 0, store_Z_trace ? (k * num_temps) : 0);
+	LogicalMatrix z_trace(return_z_trace ? its : 0, return_z_trace ? (k * num_temps) : 0);
+	LogicalMatrix x_trace(return_x_trace ? its : 0, return_x_trace ? n : 0);
 	NumericMatrix y_log_lik_trace(its, num_temps);
 	NumericMatrix y_log_lik_t_equals_1_trace(its, num_temps);
-	LogicalMatrix Z(num_temps, k);
+	LogicalMatrix z(num_temps, k);
 
-	NumericMatrix logit_Z_rates_trace(its, num_temps);
+	NumericMatrix logit_z_rates_trace(its, num_temps);
 	NumericMatrix log_phis_trace(its, num_temps);
 
 	LogicalVector swap_accept_trace(swaps * its);
 	IntegerVector swap_temp1_trace(swaps * its);
 
-	IntegerVector count_Z1(num_temps, 0);
+	IntegerVector count_z1(num_temps, 0);
 	for (int temp = 0; temp < num_temps; temp++) {
 		for (int v = 0; v < k; v++) {
-			Z(temp, v) = Z0(temp, v); 
-			count_Z1[temp] += (int)Z(temp, v);	
+			z(temp, v) = z0(temp, v); 
+			count_z1[temp] += (int)z(temp, v);	
 		}
 	}
 
@@ -89,7 +89,7 @@ List bevimed_mc(
 	for (int temp = 0; temp < num_temps; temp++) {
 		for (int v = 0; v < k; v++) {
 			for (int case_with_v = var_block_start_index[v]; case_with_v < var_block_stop_index[v]; case_with_v++) {
-				pathogenic_var_count(temp, cases[case_with_v]) += (int)Z(temp, v) * counts[case_with_v];
+				pathogenic_var_count(temp, cases[case_with_v]) += (int)z(temp, v) * counts[case_with_v];
 			}
 		}
 
@@ -116,42 +116,42 @@ List bevimed_mc(
 	q_tot_tab[0] = 0.0;
 	p_tot_tab[0] = 0.0;
 	for (int i = 1; i <= n; i++) {
-		q1_tab[i] = q1_tab[i-1] + log(i-1 + q_shape1);
-		q2_tab[i] = q2_tab[i-1] + log(i-1 + q_shape2);
-		p1_tab[i] = p1_tab[i-1] + log(i-1 + p_shape1);
-		p2_tab[i] = p2_tab[i-1] + log(i-1 + p_shape2);
-		q_tot_tab[i] = q_tot_tab[i-1] + log(i-1 + q_shape1 + q_shape2);
-		p_tot_tab[i] = p_tot_tab[i-1] + log(i-1 + p_shape1 + p_shape2);
+		q1_tab[i] = q1_tab[i-1] + log(i-1 + tau_shape1);
+		q2_tab[i] = q2_tab[i-1] + log(i-1 + tau_shape2);
+		p1_tab[i] = p1_tab[i-1] + log(i-1 + pi_shape1);
+		p2_tab[i] = p2_tab[i-1] + log(i-1 + pi_shape2);
+		q_tot_tab[i] = q_tot_tab[i-1] + log(i-1 + tau_shape1 + tau_shape2);
+		p_tot_tab[i] = p_tot_tab[i-1] + log(i-1 + pi_shape1 + pi_shape2);
 	}
 
-	NumericVector Z_shape1_gamma_table(k+1);
-	NumericVector Z_shape2_gamma_table(k+1);
-	NumericVector Z_total_gamma_table(k+1);
-	Z_shape1_gamma_table[0] = 0.0;
-	Z_shape2_gamma_table[0] = 0.0;
-	Z_total_gamma_table[0] = 0.0;
+	NumericVector z_shape1_gamma_table(k+1);
+	NumericVector z_shape2_gamma_table(k+1);
+	NumericVector z_total_gamma_table(k+1);
+	z_shape1_gamma_table[0] = 0.0;
+	z_shape2_gamma_table[0] = 0.0;
+	z_total_gamma_table[0] = 0.0;
 	for (int v = 0; v <= k; v++) {
-		Z_shape1_gamma_table[v] = Z_shape1_gamma_table[v-1] + log(v-1 + Z_shape1);
-		Z_shape2_gamma_table[v] = Z_shape2_gamma_table[v-1] + log(v-1 + Z_shape2);
-		Z_total_gamma_table[v] = Z_total_gamma_table[v-1] + log(v-1 + Z_shape1 + Z_shape2);
+		z_shape1_gamma_table[v] = z_shape1_gamma_table[v-1] + log(v-1 + z_shape1);
+		z_shape2_gamma_table[v] = z_shape2_gamma_table[v-1] + log(v-1 + z_shape2);
+		z_total_gamma_table[v] = z_total_gamma_table[v-1] + log(v-1 + z_shape1 + z_shape2);
 	}
 
 	for (int it = 0; it < its; it++) {
 		double annealing_factor = annealing ? (double)(its-it) : 1.0;
 		for (int chain_number = 0; chain_number < num_temps; chain_number++) {
-			if (estimate_logit_Z_rate) {
-				double proposal = logit_Z_rates[chain_number] + norm_rand() * logit_Z_rate_proposal_sds[chain_number];
+			if (estimate_logit_z_rate) {
+				double proposal = logit_z_rates[chain_number] + norm_rand() * logit_z_rate_proposal_sds[chain_number];
 
-				double ll_cur = logit_beta(logit_Z_rate_mean, logit_Z_rate_sd, logit_Z_rates[chain_number]);
-				double ll_upd = logit_beta(logit_Z_rate_mean, logit_Z_rate_sd, proposal);
+				double ll_cur = logit_beta(logit_z_rate_mean, logit_z_rate_sd, logit_z_rates[chain_number]);
+				double ll_upd = logit_beta(logit_z_rate_mean, logit_z_rate_sd, proposal);
 				for (int v = 0; v < k; v++) {
-					double pv_cur = expit(exp(log_phis[chain_number]) * Z_weights[v] + logit_Z_rates[chain_number]);
-					double pv_upd = expit(exp(log_phis[chain_number]) * Z_weights[v] + proposal);
-					ll_cur += Z(chain_number, v) ? log(pv_cur) : log(1.0-pv_cur);
-					ll_upd += Z(chain_number, v) ? log(pv_upd) : log(1.0-pv_upd);
+					double pv_cur = expit(exp(log_phis[chain_number]) * z_weights[v] + logit_z_rates[chain_number]);
+					double pv_upd = expit(exp(log_phis[chain_number]) * z_weights[v] + proposal);
+					ll_cur += z(chain_number, v) ? log(pv_cur) : log(1.0-pv_cur);
+					ll_upd += z(chain_number, v) ? log(pv_upd) : log(1.0-pv_upd);
 				}
 				if (log(unif_rand()) < (ll_upd-ll_cur)) {
-					logit_Z_rates[chain_number] = proposal;
+					logit_z_rates[chain_number] = proposal;
 				}
 
 				if (estimate_phi) {
@@ -160,10 +160,10 @@ List bevimed_mc(
 					double ll_phi_cur = log_likelihood_normal(log_phi_mean, log_phi_sd, log_phis[chain_number]);
 					double ll_phi_upd = log_likelihood_normal(log_phi_mean, log_phi_sd, phi_proposal);
 					for (int v = 0; v < k; v++) {
-						double pv_cur = expit(exp(log_phis[chain_number]) * Z_weights[v] + logit_Z_rates[chain_number]);
-						double pv_upd = expit(exp(phi_proposal) * Z_weights[v] + logit_Z_rates[chain_number]);
-						ll_phi_cur += Z(chain_number, v) ? log(pv_cur) : log(1.0-pv_cur);
-						ll_phi_upd += Z(chain_number, v) ? log(pv_upd) : log(1.0-pv_upd);
+						double pv_cur = expit(exp(log_phis[chain_number]) * z_weights[v] + logit_z_rates[chain_number]);
+						double pv_upd = expit(exp(phi_proposal) * z_weights[v] + logit_z_rates[chain_number]);
+						ll_phi_cur += z(chain_number, v) ? log(pv_cur) : log(1.0-pv_cur);
+						ll_phi_upd += z(chain_number, v) ? log(pv_upd) : log(1.0-pv_upd);
 					}
 					if (log(unif_rand()) < (ll_phi_upd-ll_phi_cur)) {
 						log_phis[chain_number] = phi_proposal;
@@ -181,7 +181,7 @@ List bevimed_mc(
 				int c_s10 = count_x1[chain_number] - count_y1x1[chain_number];
 
 				for (int i = var_block_start_index[v]; i < var_block_stop_index[v]; i++) {
-					int alt_pathogenic_var_count = pathogenic_var_count(chain_number, cases[i]) + (Z(chain_number, v) ? (-counts[i]) : counts[i]);
+					int alt_pathogenic_var_count = pathogenic_var_count(chain_number, cases[i]) + (z(chain_number, v) ? (-counts[i]) : counts[i]);
 					bool alt_x = alt_pathogenic_var_count >= min_ac[cases[i]];
 					if (alt_x != x(chain_number, cases[i])) {
 						dx1 += (int)alt_x - (int)x(chain_number, cases[i]);
@@ -197,18 +197,18 @@ List bevimed_mc(
 				int u_s11 = alt_count_y1x1;
 				int u_s10 = alt_count_x1 - alt_count_y1x1;
 
-				double Z_contribution;
-				if (estimate_logit_Z_rate) {
-					int dZ1 = Z(chain_number, v) ? -1 : 1;
-					double vp = expit(logit_Z_rates[chain_number] + exp(log_phis[chain_number]) * Z_weights[v]);
-					Z_contribution = + dZ1 * log(1.0-vp) - dZ1 * log(vp); 
+				double z_contribution;
+				if (estimate_logit_z_rate) {
+					int dz1 = z(chain_number, v) ? -1 : 1;
+					double vp = expit(logit_z_rates[chain_number] + exp(log_phis[chain_number]) * z_weights[v]);
+					z_contribution = + dz1 * log(1.0-vp) - dz1 * log(vp); 
 				} 
 				else {
-					Z_contribution = + ((Z(chain_number, v)) ? (log(count_Z1[chain_number] + Z_shape1 - 1.0) - log(k - count_Z1[chain_number] + Z_shape2)) : (-log(count_Z1[chain_number] + Z_shape1) + log(k - count_Z1[chain_number] + Z_shape2 - 1.0)));
+					z_contribution = + ((z(chain_number, v)) ? (log(count_z1[chain_number] + z_shape1 - 1.0) - log(k - count_z1[chain_number] + z_shape2)) : (-log(count_z1[chain_number] + z_shape1) + log(k - count_z1[chain_number] + z_shape2 - 1.0)));
 				}
 
-				double current_Zv_log_odds = 
-					+ Z_contribution
+				double current_zv_log_odds = 
+					+ z_contribution
 					+ (
 						+ (q1_tab[c_s01]-q1_tab[u_s01])
 						+ (q2_tab[c_s00]-q2_tab[u_s00])
@@ -219,15 +219,15 @@ List bevimed_mc(
 					) * t[chain_temperature_reference[chain_number]] * annealing_factor
 				;
 
-				if (unif_rand() < (1.0-1.0/(1.0+exp(-current_Zv_log_odds)))) {
+				if (unif_rand() < (1.0-1.0/(1.0+exp(-current_zv_log_odds)))) {
 					count_x1[chain_number] += dx1;
 					count_y1x1[chain_number] += dy1x1;
 					for (int i = var_block_start_index[v]; i < var_block_stop_index[v]; i++) {
-						pathogenic_var_count(chain_number, cases[i]) += (Z(chain_number, v) ? (-counts[i]) : counts[i]);
+						pathogenic_var_count(chain_number, cases[i]) += (z(chain_number, v) ? (-counts[i]) : counts[i]);
 						x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac[cases[i]];
 					}
-					count_Z1[chain_number] += Z(chain_number, v) ? (-1) : 1;
-					Z(chain_number, v) = !Z(chain_number, v);
+					count_z1[chain_number] += z(chain_number, v) ? (-1) : 1;
+					z(chain_number, v) = !z(chain_number, v);
 				}
 			}
 		}
@@ -255,7 +255,7 @@ List bevimed_mc(
 					int v1_change_count_y1x1 = count_y1x1[chain_number];
 
 					for (int i = var_block_start_index[v1]; i < var_block_stop_index[v1]; i++) {
-						int alt_pathogenic_var_count = pathogenic_var_count(chain_number, cases[i]) + (Z(chain_number, v1) ? (-counts[i]) : counts[i]);
+						int alt_pathogenic_var_count = pathogenic_var_count(chain_number, cases[i]) + (z(chain_number, v1) ? (-counts[i]) : counts[i]);
 						bool alt_x = alt_pathogenic_var_count >= min_ac[cases[i]];
 						if (alt_x != x(chain_number, cases[i])) {
 							v1_change_count_x1 += (int)alt_x - (int)x(chain_number, cases[i]);
@@ -272,7 +272,7 @@ List bevimed_mc(
 					int v2_change_count_y1x1 = count_y1x1[chain_number];
 
 					for (int i = var_block_start_index[v2]; i < var_block_stop_index[v2]; i++) {
-						int alt_pathogenic_var_count = pathogenic_var_count(chain_number, cases[i]) + (Z(chain_number, v2) ? (-counts[i]) : counts[i]);
+						int alt_pathogenic_var_count = pathogenic_var_count(chain_number, cases[i]) + (z(chain_number, v2) ? (-counts[i]) : counts[i]);
 						bool alt_x = alt_pathogenic_var_count >= min_ac[cases[i]];
 						if (alt_x != x(chain_number, cases[i])) {
 							v2_change_count_x1 += (int)alt_x - (int)x(chain_number, cases[i]);
@@ -293,9 +293,9 @@ List bevimed_mc(
 					for (int i = var_block_start_index[v2]; i < var_block_stop_index[v2]; i++)
 						temporary_pathogenic_var_count[cases[i]] = pathogenic_var_count(chain_number, cases[i]);
 					for (int i = var_block_start_index[v1]; i < var_block_stop_index[v1]; i++)
-						temporary_pathogenic_var_count[cases[i]] += (Z(chain_number, v1) ? (-counts[i]) : counts[i]);
+						temporary_pathogenic_var_count[cases[i]] += (z(chain_number, v1) ? (-counts[i]) : counts[i]);
 					for (int i = var_block_start_index[v2]; i < var_block_stop_index[v2]; i++)
-						temporary_pathogenic_var_count[cases[i]] += (Z(chain_number, v2) ? (-counts[i]) : counts[i]);
+						temporary_pathogenic_var_count[cases[i]] += (z(chain_number, v2) ? (-counts[i]) : counts[i]);
 
 					for (int i = var_block_start_index[v1]; i < var_block_stop_index[v1]; i++) {
 						bool alt_x = temporary_pathogenic_var_count[cases[i]] >= min_ac[cases[i]];
@@ -320,17 +320,17 @@ List bevimed_mc(
 					int v1_and_v2_change_s11 = v1_and_v2_change_count_y1x1;
 					int v1_and_v2_change_s10 = v1_and_v2_change_count_x1 - v1_and_v2_change_count_y1x1;
 
-					double v1_Z_log_odds_favour_current;
-					if (estimate_logit_Z_rate) {
-						int dZ1 = Z(chain_number, v1) ? -1 : 1;
-						double vp = expit(logit_Z_rates[chain_number] + exp(log_phis[chain_number]) * Z_weights[v1]);
-						v1_Z_log_odds_favour_current = + dZ1 * log(1.0-vp) - dZ1 * log(vp); 
+					double v1_z_log_odds_favour_current;
+					if (estimate_logit_z_rate) {
+						int dz1 = z(chain_number, v1) ? -1 : 1;
+						double vp = expit(logit_z_rates[chain_number] + exp(log_phis[chain_number]) * z_weights[v1]);
+						v1_z_log_odds_favour_current = + dz1 * log(1.0-vp) - dz1 * log(vp); 
 					}
 					else {
-						v1_Z_log_odds_favour_current = ((Z(chain_number, v1)) ? (log(count_Z1[chain_number] + Z_shape1 - 1.0) - log(k - count_Z1[chain_number] + Z_shape2)) : (-log(count_Z1[chain_number] + Z_shape1) + log(k - count_Z1[chain_number] + Z_shape2 - 1.0)));
+						v1_z_log_odds_favour_current = ((z(chain_number, v1)) ? (log(count_z1[chain_number] + z_shape1 - 1.0) - log(k - count_z1[chain_number] + z_shape2)) : (-log(count_z1[chain_number] + z_shape1) + log(k - count_z1[chain_number] + z_shape2 - 1.0)));
 					}
 					double v1_change_odds_ratio = exp((
-						+ v1_Z_log_odds_favour_current 
+						+ v1_z_log_odds_favour_current 
 						+ (
 							+ (q1_tab[no_change_s01]-q1_tab[v1_change_s01])
 							+ (q2_tab[no_change_s00]-q2_tab[v1_change_s00])
@@ -341,17 +341,17 @@ List bevimed_mc(
 						) * t[chain_temperature_reference[chain_number]] * annealing_factor
 					) * (-1.0));
 
-					double v2_Z_log_odds_favour_current;
-					if (estimate_logit_Z_rate) {
-						int dZ1 = Z(chain_number, v2) ? -1 : 1;
-						double vp = expit(logit_Z_rates[chain_number] + exp(log_phis[chain_number]) * Z_weights[v2]);
-						v2_Z_log_odds_favour_current = + dZ1 * log(1.0-vp) - dZ1 * log(vp); 
+					double v2_z_log_odds_favour_current;
+					if (estimate_logit_z_rate) {
+						int dz1 = z(chain_number, v2) ? -1 : 1;
+						double vp = expit(logit_z_rates[chain_number] + exp(log_phis[chain_number]) * z_weights[v2]);
+						v2_z_log_odds_favour_current = + dz1 * log(1.0-vp) - dz1 * log(vp); 
 					}
 					else {
-						v2_Z_log_odds_favour_current = ((Z(chain_number, v2)) ? (log(count_Z1[chain_number] + Z_shape1 - 1.0) - log(k - count_Z1[chain_number] + Z_shape2)) : (-log(count_Z1[chain_number] + Z_shape1) + log(k - count_Z1[chain_number] + Z_shape2 - 1.0)));
+						v2_z_log_odds_favour_current = ((z(chain_number, v2)) ? (log(count_z1[chain_number] + z_shape1 - 1.0) - log(k - count_z1[chain_number] + z_shape2)) : (-log(count_z1[chain_number] + z_shape1) + log(k - count_z1[chain_number] + z_shape2 - 1.0)));
 					}
 					double v2_change_odds_ratio = exp((
-						+ v2_Z_log_odds_favour_current
+						+ v2_z_log_odds_favour_current
 						+ (
 							+ (q1_tab[no_change_s01]-q1_tab[v2_change_s01])
 							+ (q2_tab[no_change_s00]-q2_tab[v2_change_s00])
@@ -364,42 +364,42 @@ List bevimed_mc(
 
 
 
-					double v1_and_v2_Z_log_odds_favour_current;
-					if (estimate_logit_Z_rate) {
-						int dZ1_v1 = Z(chain_number, v1) ? -1 : 1;
-						int dZ1_v2 = Z(chain_number, v2) ? -1 : 1;
-						double v1p = expit(logit_Z_rates[chain_number] + exp(log_phis[chain_number]) * Z_weights[v1]);
-						double v2p = expit(logit_Z_rates[chain_number] + exp(log_phis[chain_number]) * Z_weights[v2]);
-						v1_and_v2_Z_log_odds_favour_current = 
-							+ dZ1_v1 * log(1.0-v1p) - dZ1_v1 * log(v1p)
-							+ dZ1_v2 * log(1.0-v2p) - dZ1_v2 * log(v2p)
+					double v1_and_v2_z_log_odds_favour_current;
+					if (estimate_logit_z_rate) {
+						int dz1_v1 = z(chain_number, v1) ? -1 : 1;
+						int dz1_v2 = z(chain_number, v2) ? -1 : 1;
+						double v1p = expit(logit_z_rates[chain_number] + exp(log_phis[chain_number]) * z_weights[v1]);
+						double v2p = expit(logit_z_rates[chain_number] + exp(log_phis[chain_number]) * z_weights[v2]);
+						v1_and_v2_z_log_odds_favour_current = 
+							+ dz1_v1 * log(1.0-v1p) - dz1_v1 * log(v1p)
+							+ dz1_v2 * log(1.0-v2p) - dz1_v2 * log(v2p)
 						;
 					}
 					else {
-						if (Z(chain_number, v1) != Z(chain_number, v2)) {
-							v1_and_v2_Z_log_odds_favour_current = 0;
+						if (z(chain_number, v1) != z(chain_number, v2)) {
+							v1_and_v2_z_log_odds_favour_current = 0;
 						}
 						else {
-							if (Z(chain_number, v1)) {
-								v1_and_v2_Z_log_odds_favour_current = (
-									+ log(Z_shape1 + count_Z1[chain_number] - 2.0)
-									+ log(Z_shape1 + count_Z1[chain_number] - 1.0)
-									- log(Z_shape2 + k - count_Z1[chain_number] + 1.0)
-									- log(Z_shape2 + k - count_Z1[chain_number])
+							if (z(chain_number, v1)) {
+								v1_and_v2_z_log_odds_favour_current = (
+									+ log(z_shape1 + count_z1[chain_number] - 2.0)
+									+ log(z_shape1 + count_z1[chain_number] - 1.0)
+									- log(z_shape2 + k - count_z1[chain_number] + 1.0)
+									- log(z_shape2 + k - count_z1[chain_number])
 								);
 							}
 							else {
-								v1_and_v2_Z_log_odds_favour_current = (
-									- log(Z_shape1 + count_Z1[chain_number] + 1.0) 
-									- log(Z_shape1 + count_Z1[chain_number])
-									+ log(Z_shape2 + k - count_Z1[chain_number] - 1.0)
-									+ log(Z_shape2 + k - count_Z1[chain_number] - 2.0)
+								v1_and_v2_z_log_odds_favour_current = (
+									- log(z_shape1 + count_z1[chain_number] + 1.0) 
+									- log(z_shape1 + count_z1[chain_number])
+									+ log(z_shape2 + k - count_z1[chain_number] - 1.0)
+									+ log(z_shape2 + k - count_z1[chain_number] - 2.0)
 								);
 							}
 						}
 					}
 					double v1_and_v2_change_odds_ratio = exp((
-						+ v1_and_v2_Z_log_odds_favour_current
+						+ v1_and_v2_z_log_odds_favour_current
 						+ (
 							+ (q1_tab[no_change_s01]-q1_tab[v1_and_v2_change_s01])
 							+ (q2_tab[no_change_s00]-q2_tab[v1_and_v2_change_s00])
@@ -431,21 +431,21 @@ List bevimed_mc(
 							count_x1[chain_number] = v1_change_count_x1;
 							count_y1x1[chain_number] = v1_change_count_y1x1;
 							for (int i = var_block_start_index[v1]; i < var_block_stop_index[v1]; i++) {
-								pathogenic_var_count(chain_number, cases[i]) += (Z(chain_number, v1) ? (-counts[i]) : counts[i]);
+								pathogenic_var_count(chain_number, cases[i]) += (z(chain_number, v1) ? (-counts[i]) : counts[i]);
 								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac[cases[i]];
 							}
-							count_Z1[chain_number] += Z(chain_number, v1) ? (-1) : 1;
-							Z(chain_number, v1) = !Z(chain_number, v1);
+							count_z1[chain_number] += z(chain_number, v1) ? (-1) : 1;
+							z(chain_number, v1) = !z(chain_number, v1);
 						}
 						else if (random_draw < p_v2_threshold) {
 							count_x1[chain_number] = v2_change_count_x1;
 							count_y1x1[chain_number] = v2_change_count_y1x1;
 							for (int i = var_block_start_index[v2]; i < var_block_stop_index[v2]; i++) {
-								pathogenic_var_count(chain_number, cases[i]) += (Z(chain_number, v2) ? (-counts[i]) : counts[i]);
+								pathogenic_var_count(chain_number, cases[i]) += (z(chain_number, v2) ? (-counts[i]) : counts[i]);
 								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac[cases[i]];
 							}
-							count_Z1[chain_number] += Z(chain_number, v2) ? (-1) : 1;
-							Z(chain_number, v2) = !Z(chain_number, v2);
+							count_z1[chain_number] += z(chain_number, v2) ? (-1) : 1;
+							z(chain_number, v2) = !z(chain_number, v2);
 						}
 						else {
 							count_x1[chain_number] = v1_and_v2_change_count_x1;
@@ -454,14 +454,14 @@ List bevimed_mc(
 								pathogenic_var_count(chain_number, cases[i]) = temporary_pathogenic_var_count[cases[i]];
 								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac[cases[i]];
 							}
-							count_Z1[chain_number] += Z(chain_number, v1) ? (-1) : 1;
-							Z(chain_number, v1) = !Z(chain_number, v1);
+							count_z1[chain_number] += z(chain_number, v1) ? (-1) : 1;
+							z(chain_number, v1) = !z(chain_number, v1);
 							for (int i = var_block_start_index[v2]; i < var_block_stop_index[v2]; i++) {
 								pathogenic_var_count(chain_number, cases[i]) = temporary_pathogenic_var_count[cases[i]];
 								x(chain_number, cases[i]) = pathogenic_var_count(chain_number, cases[i]) >= min_ac[cases[i]];
 							}
-							count_Z1[chain_number] += Z(chain_number, v2) ? (-1) : 1;
-							Z(chain_number, v2) = !Z(chain_number, v2);
+							count_z1[chain_number] += z(chain_number, v2) ? (-1) : 1;
+							z(chain_number, v2) = !z(chain_number, v2);
 						}
 					}
 
@@ -558,39 +558,46 @@ List bevimed_mc(
 
 			y_log_lik_trace(it, chain_temperature_reference[chain_number]) = y_log_lik;
 			y_log_lik_t_equals_1_trace(it, chain_temperature_reference[chain_number]) = y_log_lik_t_equals_1;
-			logit_Z_rates_trace(it, chain_temperature_reference[chain_number]) = logit_Z_rates[chain_number];
+			logit_z_rates_trace(it, chain_temperature_reference[chain_number]) = logit_z_rates[chain_number];
 			log_phis_trace(it, chain_temperature_reference[chain_number]) = log_phis[chain_number];
 
-			if (store_Z_trace) {
+			if (return_z_trace) {
 				for (int v = 0; v < k; v++) {
-					Z_trace(it, chain_temperature_reference[chain_number] * k + v) = Z(chain_number, v);
+					z_trace(it, chain_temperature_reference[chain_number] * k + v) = z(chain_number, v);
 				}
+			}
+		}
+
+		if (return_x_trace) {
+			for (int samp = 0; samp < n; samp++) {
+				x_trace(it, samp) = x(temperature_chain_reference[num_temps-1], samp);
 			}
 		}
 	}
 
-	LogicalMatrix terminal_Z(num_temps, k);
+	LogicalMatrix terminal_z(num_temps, k);
 	for (int chain_number = 0; chain_number < num_temps; chain_number++)
 		for (int j = 0; j < k; j++)
-			terminal_Z(chain_temperature_reference[chain_number], j) = Z(chain_number, j);
+			terminal_z(chain_temperature_reference[chain_number], j) = z(chain_number, j);
 
 	NumericVector terminal_log_phi(num_temps);
 	NumericVector terminal_logit_omega(num_temps);
 	for (int chain_number = 0; chain_number < num_temps; chain_number++) {
 		terminal_log_phi[chain_number] = log_phis_trace(its-1, chain_number);
-		terminal_logit_omega[chain_number] = logit_Z_rates_trace(its-1, chain_number);
+		terminal_logit_omega[chain_number] = logit_z_rates_trace(its-1, chain_number);
 	}
 
 	return List::create(
 		Named("y_log_lik")=y_log_lik_trace,
 		Named("y_log_lik_t_equals_1")=y_log_lik_t_equals_1_trace,
-		Named("terminal_Z")=terminal_Z,
+		Named("terminal_z")=terminal_z,
 		Named("terminal_log_phi")=terminal_log_phi,
 		Named("terminal_logit_omega")=terminal_logit_omega,
-		Named("Z")=Z_trace,
+		Named("z")=z_trace,
+		Named("x")=x_trace,
 		Named("swap_accept")=swap_accept_trace,
 		Named("swap_at_temperature")=swap_temp1_trace,
-		Named("logit_omega")=logit_Z_rates_trace,
+		Named("logit_omega")=logit_z_rates_trace,
 		Named("log_phi")=log_phis_trace
 	);
 }

@@ -6,21 +6,17 @@ library(BeviMed)
 set.seed(0)
 
 ## ------------------------------------------------------------------------
-y <- c(rep(TRUE, 20), rep(FALSE, 80))
-Z <- c(rep(TRUE, 3), rep(FALSE, 17))
+G <- matrix(rbinom(size=2, prob=0.02, n=100*20), nrow=100, ncol=20)
+y_random <- runif(n=nrow(G)) < 0.1
+
+prob_association(G=G, y=y_random)
 
 ## ------------------------------------------------------------------------
-G1 <- sapply(y, function(y_i) as.integer(runif(n=length(Z)) < 0.15))
+y_dependent <- apply(G, 1, function(variants) sum(variants[1:3]) > 0)
 
-prob_association(G=G1, y=y)
-
-## ------------------------------------------------------------------------
-G2 <- sapply(y, function(y_i) as.integer(runif(n=length(Z)) < 0.15 | 
-	(if (y_i) 1:length(Z) == sample(which(Z), size=1) else rep(FALSE, length(Z)))))
-
-prob_association(G=G2, y=y)
+prob_association(G=G, y=y_dependent)
 
 ## ------------------------------------------------------------------------
-output <- summary(bevimed(G=G2, y=y))
+output <- summary(bevimed(G=G, y=y_dependent))
 output
 

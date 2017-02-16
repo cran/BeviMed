@@ -14,7 +14,7 @@
 
 <meta name="date" content="2017-02-16" />
 
-<title>BeviMed Introduction</title>
+<title>BeviMed with VCFs</title>
 
 
 
@@ -50,80 +50,31 @@ code > span.er { color: #ff0000; font-weight: bold; }
 
 
 
-<h1 class="title toc-ignore">BeviMed Introduction</h1>
+<h1 class="title toc-ignore">BeviMed with VCFs</h1>
 <h4 class="author"><em>Daniel Greene</em></h4>
 <h4 class="date"><em>2017-02-16</em></h4>
 
 
 
-<p><code>BeviMed</code>, which stands for <em>Bayesian Evaluation of Variant Involvement in Mendelian Disease</em>, is an association test which estimates both the probability of an association between a given set of variants and a case/control disease label, and, given the association, the probability that each individual variant is pathogenic with respect to the disease.</p>
-<p>The inference is carried out based on the inputs:</p>
-<ul>
-<li>case-control label <code>y</code>, a length <code>N</code> (number of samples) <code>logical</code> vector,</li>
-<li>genotype matrix <code>G</code>, an <code>N</code> by <code>k</code> integer matrix of allele counts for <code>N</code> individuals at <code>k</code> rare variant sites,</li>
-<li>a minimum allele count <code>min_ac</code>, representing a mode of inheritance hypothesis (i.e. minimum number of pathogenic variants required to be considered to have a <em>pathogenic configuration</em> of variants).</li>
-</ul>
-<p>Then, depending on the quantity of interest, the inference procedure can be invoked simply by passing the above arguments to the functions:</p>
-<ul>
-<li><code>prob_association</code> - returning the probability of association between configurations of variants represented in <code>G</code> and the case-control label <code>y</code> (optionally broken down by mode of inheritance). By default, the prior probability of association is <code>0.01</code>, and the prior probabilities of dominant and recessive inheritance given that there is an association are each <code>0.5</code>.</li>
-<li><code>log_BF</code> - the log Bayes factor between the association model and no-association model.</li>
-<li><code>prob_pathogenic</code> - the probabilities of pathogenicity for the individual variants.</li>
-</ul>
-<p>The inference is performed by the function <code>bevimed</code>, an MCMC sampling procedure with many parameters, including those listed above and others determining the sampling management and prior distributions of the model parameters.</p>
-<p>It returns a list of traces for the sampled parameters in an object of class <code>BeviMed</code>. This object can take up a lot of memory, so it may be preferable to store a summarised version passed to <code>summary</code>.</p>
-<p>Here we demonstrate a simple application of BeviMed for some simulated data.</p>
+<p>The <code>BeviMed</code> package comes with a script containing functions to simplify reading allele count matrices from VCF files. The functions depend on <code>tabix</code>, but have the advantage of allowing variants in local regions to be read in, reducing the amount of memory consumed at any one time. However, if you want to analyse many regions, it may be more efficient to read in larger parts of the file - in which case, a package such as <code>vcfR</code> might be more appropriate.</p>
+<p>In order to make the functions available, we must source the script:</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(BeviMed)
-<span class="kw">set.seed</span>(<span class="dv">0</span>)</code></pre>
-<p>Firstly, we’ll generate some random data consisting of an allele-count matrix <code>G</code> for 100 samples at 20 variant sites (each with an allele frequency of 0.02) and an independently generated case-control label, <code>y_random</code>.</p>
-<pre class="sourceCode r"><code class="sourceCode r">G &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">rbinom</span>(<span class="dt">size=</span><span class="dv">2</span>, <span class="dt">prob=</span><span class="fl">0.02</span>, <span class="dt">n=</span><span class="dv">100</span>*<span class="dv">20</span>), <span class="dt">nrow=</span><span class="dv">100</span>, <span class="dt">ncol=</span><span class="dv">20</span>)
-y_random &lt;-<span class="st"> </span><span class="kw">runif</span>(<span class="dt">n=</span><span class="kw">nrow</span>(G)) &lt;<span class="st"> </span><span class="fl">0.1</span>
+<span class="kw">source</span>(<span class="kw">paste0</span>(<span class="kw">system.file</span>(<span class="dt">package=</span><span class="st">&quot;BeviMed&quot;</span>, <span class="st">&quot;/scripts/vcf.R&quot;</span>)))</code></pre>
+<p>The script creates the function <code>vcf2matrix</code>, which depends on the external program <code>tabix</code> (available from <a href="http://www.htslib.org/download/">http://www.htslib.org/download/</a>) for reading allele count matrices from VCF files. It uses arguments:</p>
+<ul>
+<li><code>vcf_file_name</code> - path to vcf file.</li>
+<li><code>chr</code> - <code>character</code> value giving chromosome.</li>
+<li><code>from</code>/<code>to</code> - <code>integer</code> values giving from/to coordinates for chromosome.</li>
+<li><code>samples</code> - <code>character</code> vector of sample names as used in the VCF.</li>
+<li><code>include_variant_info</code> - <code>boolean</code> value determining whether to return just a matrix of allele counts (<code>TRUE</code>, default) or a list of allele count matrix <code>G</code> and <code>data.frame</code> of variant information <code>info</code> (<code>FALSE</code>). The variant information <code>info</code> could be useful for filtering the variants, for example if the VCF has not been pre-filtered for rare variants.</li>
+<li><code>description_columns</code> - <code>integer</code> value giving number of columns of description fields in the VCF file (i.e. before the genotype columns begin), defaults to <code>9</code>.</li>
+<li><code>warn_if_AF_greater_than</code> - <code>numeric</code> value giving threshold allele frequency for generating a warning.</li>
+</ul>
+<p>You can invoke the function simply to obtain the allele count matrix and pass straight to <code>bevimed</code>, along with phenotype label:</p>
+<pre class="sourceCode r"><code class="sourceCode r">G &lt;-<span class="st"> </span><span class="kw">vcf2matrix</span>(<span class="st">&quot;my-vcf.vcf.gz&quot;</span>, <span class="dt">chr=</span><span class="st">&quot;2&quot;</span>, <span class="dt">from=</span><span class="dv">1</span>, <span class="dt">to=</span><span class="fl">1e4</span>)
+pheno &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file=</span><span class="st">&quot;my-phenotype-data.txt&quot;</span>, <span class="dt">header=</span><span class="ot">TRUE</span>)
 
-<span class="kw">prob_association</span>(<span class="dt">G=</span>G, <span class="dt">y=</span>y_random)</code></pre>
-<pre><code>## [1] 0.002853161</code></pre>
-<p>The results indicate that there is a low probability of association. We now generate a new case control label <code>y_dependent</code> which depends on <code>G</code> - specifically, we treat variants 1 to 3 as ‘pathogenic’, and label any samples harbouring alleles for any of these variants as cases.</p>
-<pre class="sourceCode r"><code class="sourceCode r">y_dependent &lt;-<span class="st"> </span><span class="kw">apply</span>(G, <span class="dv">1</span>, function(variants) <span class="kw">sum</span>(variants[<span class="dv">1</span>:<span class="dv">3</span>]) &gt;<span class="st"> </span><span class="dv">0</span>)
-
-<span class="kw">prob_association</span>(<span class="dt">G=</span>G, <span class="dt">y=</span>y_dependent)</code></pre>
-<pre><code>## [1] 0.9997962</code></pre>
-<p>Notice that there is now a higher estimated probability of association.</p>
-<p>By default, <code>prob_association</code> integrates over mode of inheritance (e.g. are at least 1 or 2 pathogenic variants required for a pathogenic configuration?). The probabilities of association with each mode of inheritance can by shown by passing the option <code>by_MOI=TRUE</code> (for more details, including how to set the ploidy of the samples within the region, see <code>?prob_pathogenic</code>).</p>
-<p>For a more detailed output, the <code>bevimed</code> function can be used, and it’s returned values can be summarised and stored/printed.</p>
-<pre class="sourceCode r"><code class="sourceCode r">output &lt;-<span class="st"> </span><span class="kw">summary</span>(<span class="kw">bevimed</span>(<span class="dt">G=</span>G, <span class="dt">y=</span>y_dependent))
-output</code></pre>
-<pre><code>## --------------------------------------------------------------------------- 
-## The probability of association is 1 [prior: 0.01]
-## 
-## The expected number of variants involved in explained cases is: 2.96
-## 
-## Log Bayes factor between gamma 1 model and gamma 0 model is 13.91
-## A confidence interval for the log Bayes factor is:
-##  2.5% 97.5% 
-## 12.22 14.74 
-## --------------------------------------------------------------------------- 
-## Estimated probabilities of pathogenicity of individual variants
-## (conditional on gamma = 1)
-## 
-##  Variant Controls Cases P(z_j=1|y,gamma=1)              Bar Chart
-##        1        0     2               1.00 [=================== ]
-##        2        0     4               1.00 [=================== ]
-##        3        0     2               0.94 [==================  ]
-##        4        9     0               0.00 [                    ]
-##        5        2     1               0.00 [                    ]
-##        6        4     0               0.00 [                    ]
-##        7        3     0               0.00 [                    ]
-##        8        2     1               0.00 [                    ]
-##        9        4     1               0.00 [                    ]
-##       10        7     0               0.00 [                    ]
-##       11        3     0               0.00 [                    ]
-##       12        1     0               0.01 [                    ]
-##       13        4     0               0.00 [                    ]
-##       14        1     2               0.01 [                    ]
-##       15        3     0               0.00 [                    ]
-##       16        5     0               0.00 [                    ]
-##       17        7     0               0.00 [                    ]
-##       18        4     0               0.00 [                    ]
-##       19        7     2               0.00 [                    ]
-##       20        6     0               0.00 [                    ]</code></pre>
+<span class="kw">bevimed</span>(<span class="dt">y=</span>pheno$disease_status, G)</code></pre>
 
 
 

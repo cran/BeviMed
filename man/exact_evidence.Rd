@@ -7,7 +7,7 @@
 exact_evidence(G, ...)
 }
 \arguments{
-\item{G}{Integer matrix of variant counts per individual, one column per individual and one row per variant.}
+\item{G}{Integer matrix of variant counts per individual, one row per individual and one column per variant.}
 
 \item{...}{Other arguments to pass to \code{\link{lower_bound_gamma1_evidence}}.}
 }

@@ -12,55 +12,46 @@ vignette: >
 knitr::opts_chunk$set(dev="svg", fig.width=7, fig.height=7)
 ```
 
-`BeviMed` provides functions for performing *Bayesian Evaluation of Variant Involvement in Mendelian Disease*. The aim is to estimate the probability of an association between a latent configuration of a restricted set of variants and a case-control label, and conditional on the association, the probabilities of pathogenicity for individual variants.
+`BeviMed`, which stands for *Bayesian Evaluation of Variant Involvement in Mendelian Disease*, is an association test which estimates both the probability of an association between a given set of variants and a case/control disease label, and, given the association, the probability that each individual variant is pathogenic with respect to the disease. 
 
 The inference is carried out based on the inputs:
 
 * case-control label `y`, a length `N` (number of samples) `logical` vector, 
-* genotype matrix `G`, a `k` by `N` integer matrix of allele counts, 
+* genotype matrix `G`, an `N` by `k` integer matrix of allele counts for `N` individuals at `k` rare variant sites, 
 * a minimum allele count `min_ac`, representing a mode of inheritance hypothesis (i.e. minimum number of pathogenic variants required to be considered to have a *pathogenic configuration* of variants).
 
 Then, depending on the quantity of interest, the inference procedure can be invoked simply by passing the above arguments to the functions:
 
-* `prob_association` - returning the probability of association between configurations of variants represented in `G` and the case-control label `y` (optionally broken down by mode of inheritance),
-* `log_BF` - the log Bayes factor between the association model and no-association model,
-* `prob_pathogenic` - the probabilities of pathogenicity for the individual variants.
+* `prob_association` - returning the probability of association between configurations of variants represented in `G` and the case-control label `y` (optionally broken down by mode of inheritance). By default, the prior probability of association is `0.01`, and the prior probabilities of dominant and recessive inheritance given that there is an association are each `0.5`.
+* `log_BF` - the log Bayes factor between the association model and no-association model.
+* `prob_pathogenic` - the probabilities of pathogenicity for the individual variants. 
 
 The inference is performed by the function `bevimed`, an MCMC sampling procedure with many parameters, including those listed above and others determining the sampling management and prior distributions of the model parameters. 
 
 It returns a list of traces for the sampled parameters in an object of class `BeviMed`. This object can take up a lot of memory, so it may be preferable to store a summarised version passed to `summary`. 
 
-Here we demonstrate a simple application of BeviMed for some simulated examples.
+Here we demonstrate a simple application of BeviMed for some simulated data.
 
 ```{r}
 library(BeviMed)
 set.seed(0)
 ```
 
-Firstly, we'll generate some random data consisting of a case-control label, `y` and a variant-wise indicator of pathogenicity, `Z`, where `Z[i] == TRUE` if variant `i` is pathogenic and `FALSE` otherwise.
-
-In `y`, we will represent 100 samples, the first 20 of whom are cases and the next 80 of whom are controls, and in `Z` we will represent 20 SNPs at which the samples are to be genotyped, of which the first 3 are pathogenic and of which the next 17 are benign.
+Firstly, we'll generate some random data consisting of an allele-count matrix `G` for 100 samples at 20 variant sites (each with an allele frequency of 0.02) and an independently generated case-control label, `y_random`.
 
 ```{r}
-y <- c(rep(TRUE, 20), rep(FALSE, 80))
-Z <- c(rep(TRUE, 3), rep(FALSE, 17))
+G <- matrix(rbinom(size=2, prob=0.02, n=100*20), nrow=100, ncol=20)
+y_random <- runif(n=nrow(G)) < 0.1
+
+prob_association(G=G, y=y_random)
 ```
 
-In the first application, we'll use variant matrix `G1` where there is no association between `y` and the variants (i.e. we simulated all genotypes at random).
+The results indicate that there is a low probability of association. We now generate a new case control label `y_dependent` which depends on `G` - specifically, we treat variants 1 to 3 as 'pathogenic', and label any samples harbouring alleles for any of these variants as cases.
 
 ```{r}
-G1 <- sapply(y, function(y_i) as.integer(runif(n=length(Z)) < 0.15))
+y_dependent <- apply(G, 1, function(variants) sum(variants[1:3]) > 0)
 
-prob_association(G=G1, y=y)
-```
-
-The results indicate that there is a low probability of association (by default a prior probability of `0.01` with each mode of inheritance is used). In the example *with* association, we'll sample the allele counts based on `y` (i.e. for the cases we'll include a random pathogenic variant amongst the observed genotypes).
-
-```{r}
-G2 <- sapply(y, function(y_i) as.integer(runif(n=length(Z)) < 0.15 | 
-	(if (y_i) 1:length(Z) == sample(which(Z), size=1) else rep(FALSE, length(Z)))))
-
-prob_association(G=G2, y=y)
+prob_association(G=G, y=y_dependent)
 ```
 
 Notice that there is now a higher estimated probability of association. 
@@ -70,6 +61,6 @@ By default, `prob_association` integrates over mode of inheritance (e.g. are at 
 For a more detailed output, the `bevimed` function can be used, and it's returned values can be summarised and stored/printed.
 
 ```{r}
-output <- summary(bevimed(G=G2, y=y))
+output <- summary(bevimed(G=G, y=y_dependent))
 output
 ```

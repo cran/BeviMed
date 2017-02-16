@@ -4,8 +4,8 @@
 \alias{region_association_evidence}
 \title{Calculate marginal probability of observed genotypes under 'pathogenic region' model}
 \usage{
-region_association_evidence(y, G, min_ac = 1L, q_shape = c(2, 4),
-  p_shape = c(1, 1))
+region_association_evidence(y, G, min_ac = 1L, tau_shape = c(1, 1),
+  pi_shape = c(2, 1))
 }
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
@@ -14,9 +14,9 @@ region_association_evidence(y, G, min_ac = 1L, q_shape = c(2, 4),
 
 \item{min_ac}{Minimum allele count per individual to be considered to have a pathogenic combination of variants. '1' could correspond to a dominant inheritance hypothesis whereas '2' could correspond to a recessive inheritance hypothesis. Can either be an integer value (then used for all samples), or integer vector of \code{length(y)}, useful for example when different samples have different ploidy.}
 
-\item{q_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with non-pathogenic variant combinations (i.e. they have less than \code{min_ac} variants.}
+\item{tau_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with non-pathogenic variant combinations (i.e. they have less than \code{min_ac} variants.}
 
-\item{p_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with pathogenic variant combinations (i.e. they have at least \code{min_ac} variants.}
+\item{pi_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with pathogenic variant combinations (i.e. they have at least \code{min_ac} variants.}
 }
 \description{
 Marginal probability calculated exactly by integration.

@@ -5,12 +5,12 @@
 \title{R interface to BeviMed c++ MCMC procedure}
 \usage{
 call_cpp(samples_per_chain, y, block_starts, block_ends, cases, counts, min_ac,
-  q_shape, p_shape, omega_shape, temperatures, Z0_matrix, estimate_omega,
+  tau_shape, pi_shape, omega_shape, temperatures, z0_matrix, estimate_omega,
   logit_omegas, logit_omega_proposal_sds, variant_weights, estimate_phi,
   log_phis, log_phi_mean, log_phi_sd, log_phi_proposal_sds,
   chain_swaps_per_cycle, annealing, tandem_variant_updates,
   case_variant_block_starts, case_variant_block_ends, case_variants,
-  store_Z_trace, burn = 0, check = TRUE)
+  return_z_trace, return_x_trace, burn = 0, check = TRUE)
 }
 \arguments{
 \item{samples_per_chain}{Number of samples to draw from each chain.}
@@ -27,15 +27,15 @@ call_cpp(samples_per_chain, y, block_starts, block_ends, cases, counts, min_ac,
 
 \item{min_ac}{Minimum allele count per individual to be considered to have a pathogenic combination of variants. '1' could correspond to a dominant inheritance hypothesis whereas '2' could correspond to a recessive inheritance hypothesis. Can either be an integer value (then used for all samples), or integer vector of \code{length(y)}, useful for example when different samples have different ploidy.}
 
-\item{q_shape}{Beta distribution parameterisation of benign variant configuration rate of affection, q.}
+\item{tau_shape}{Beta distribution parameterisation of benign variant configuration rate of affection, q.}
 
-\item{p_shape}{Beta distribution parameterisation of pathogenic variant configuration rate of affection, p.}
+\item{pi_shape}{Beta distribution parameterisation of pathogenic variant configuration rate of affection, p.}
 
 \item{omega_shape}{Beta distribution of global rate of pathogenicty of variants in gene given pathogenicity of gene, omega.}
 
 \item{temperatures}{Numeric vector of temperatures of power posteriors. One chain will be created for each element of the vector at the corresponding temperature.}
 
-\item{Z0_matrix}{Matrix of logicals, where the rows are used as an initial Zs for the chains.}
+\item{z0_matrix}{Matrix of logicals, where the rows are used as an initial zs for the chains.}
 
 \item{estimate_omega}{Logical value determining whether to estimate the parameter omega.}
 
@@ -67,7 +67,9 @@ call_cpp(samples_per_chain, y, block_starts, block_ends, cases, counts, min_ac,
 
 \item{case_variants}{Integer vector giving variant numbers (0-based, i.e. between 0 and k-1). Used to pick pairs of variants for tandem updates from.}
 
-\item{store_Z_trace}{Logical value determining whether to store the Z-vectors for each chain, which uses alot of memory, particularly if \code{samples_per_chain}, k and \code{length(temperatures)} are high.}
+\item{return_z_trace}{Logical value determining whether to store the z-vectors for each chain, which uses alot of memory, particularly if \code{samples_per_chain}, k and \code{length(temperatures)} are large.}
+
+\item{return_x_trace}{Logical value determining whether to store the x variable determined by success samples of z. Potentially uses alot of memory, particularly if \code{samples_per_chain}, k and \code{length(temperatures)} are large.}
 
 \item{burn}{Number of samples to drop from the start of the chain.}
 
