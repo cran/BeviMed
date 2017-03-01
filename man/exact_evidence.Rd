@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{exact_evidence}
 \alias{exact_evidence}
-\title{Calculate exact evidence for model gamma=1}
+\title{Calculate exact evidence for model gamma = 1}
 \usage{
 exact_evidence(G, ...)
 }
@@ -11,7 +11,13 @@ exact_evidence(G, ...)
 
 \item{...}{Other arguments to pass to \code{\link{lower_bound_gamma1_evidence}}.}
 }
+\value{
+Log marginal likelihood.
+}
 \description{
-Calculate exact evidence for model gamma=1
+Directly evaluate evidence for model gamma = 1 by summing likelihood over all partitions of variants. Note, complexity grows exponentially with the number of variants, so is intractable for much more than ten variants.
+}
+\seealso{
+\code{\link{gamma0_evidence}}, \code{\link{lower_bound_gamma1_evidence}}
 }
 

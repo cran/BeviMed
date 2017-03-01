@@ -2,14 +2,20 @@
 % Please edit documentation in R/convenience.R
 \name{explaining_variants}
 \alias{explaining_variants}
-\title{Get expected number of variants involved in cases explained by pathogenic conigurations of alleles}
+\title{Calculate expected number of pathogenic variants in cases}
 \usage{
 explaining_variants(...)
 }
 \arguments{
-\item{...}{Arguments to be passed to \code{\link{bevimed}}.}
+\item{...}{Arguments to pass to \code{\link{bevimed_m}}.}
+}
+\value{
+Numeric value.
 }
 \description{
-Get expected number of variants involved in cases explained by pathogenic conigurations of alleles
+Use \code{\link{bevimed_m}} to perform inference under model gamma = 1 and return only the expected number of pathogenic variants in cases.
+}
+\seealso{
+\code{\link{extract_explaining_variants}}, \code{\link{bevimed_m}}
 }
 

@@ -18,7 +18,7 @@ just_counts <- function(parts, description_columns=9) {
 	structure(grepl(x=y, pattern="^[^0.][/|].") + grepl(x=y, pattern="^.[/|][^0.]"), dim=c(if (length(parts) > 0) length(parts[[1]])-description_columns else 0, length(parts)))
 }
 
-var_info <- function(parts, description_columns=9) structure(dimnames=list(NULL, c("CHROM","POS","ID","REF","ALT","QUAL","FILTER","FORMAT","INFO")), structure(dim=c(length(parts),description_columns), t(sapply(parts, "[", seq(description_columns)))))
+var_info <- function(parts, description_columns=9) structure(dimnames=list(NULL, c("CHROM","POS","ID","REF","ALT","QUAL","FILTER","FORMAT","INFO")), structure(dim=c(length(parts),description_columns), t(sapply(parts, "[", seq(length.out=description_columns)))))
 
 get_block_parts <- function(vcf_file_name, chr, from, to) {
 	cmd <- paste("tabix ", vcf_file_name, " ", chr, ":", from, "-", to, sep="")

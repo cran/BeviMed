@@ -2,12 +2,12 @@
 % Please edit documentation in R/functions.R
 \name{stack_BeviMeds}
 \alias{stack_BeviMeds}
-\title{Concatenate objects of class \code{BeviMed}}
+\title{Concatenate objects of class \code{BeviMed_raw}}
 \usage{
-stack_BeviMeds(...)
+stack_BeviMeds(objects)
 }
 \arguments{
-\item{...}{BeviMed objects}
+\item{objects}{\code{list} of \code{BeviMed_raw} objects.}
 }
 \value{
 \code{BeviMed} object.

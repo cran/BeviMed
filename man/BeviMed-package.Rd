@@ -1,33 +1,31 @@
-\name{ccvt-package}
-\alias{ccvt-package}
-\alias{ccvt}
+\name{BeviMed-package}
+\alias{BeviMed-package}
+\alias{BeviMed}
 \docType{package}
 \title{
-  A short title line describing what the package does
+Bayesian Evaluation of Variant Involvement in Mendelian Disease 
 }
 \description{
-  A more detailed description of what the package does. A length
-  of about one to five lines is recommended.
+A fast integrative genetic association test for rare diseases.
 }
 \details{
-  This section should provide a more detailed overview of how to use the
-  package, including the most important functions.
+BeviMed estimates a probability of association between a case/control label and allele counts at rare variant sites in a genomic locus and also, given that there is an association, the probabilities that each variant is involved in the disease. It does so by estimating the evidence for a model where the case/control label is independent of the allele configurations, and a model in which the probability of the case/control label depends on the corresponding allele configuration and a latent partition of variants into pathogenic and non-pathogenic groups.
 }
 \author{
-Daniel Greene, email optional.
+Daniel Greene.
 
 Maintainer: Daniel Greene <dg333@cam.ac.uk>
 }
-\references{
-  This optional section can contain literature or other references for
-  background information.
-}
-% Optionally other standard keywords, one per line,
-% from the file KEYWORDS in the R documentation.
-\keyword{ package }
+\keyword{ package, statistical association test, Bayesian inference, rare disease  }
 \seealso{
-  Optional links to other man pages
+  \code{\link{bevimed}}
 }
 \examples{
-  # Optional simple examples of the most important functions
+# generate random allele count matrix for 10 individuals at 5 rare variant sites
+G <- matrix(rbinom(n=50, size=2, prob=0.1), nrow=10, ncol=5)
+# generate case/control label whereby individuals with any alleles in the first 
+# three variants are labelled cases
+y <- apply(G[,1:3], 1, sum) > 0
+# apply BeviMed
+bevimed(y=y, G=G)
 }

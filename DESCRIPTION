@@ -1,9 +1,8 @@
 Package: BeviMed
 Type: Package
-Title: Bayesian Evaluation of Variant Involvement in Mendelian
-        Disorders
-Version: 3.0
-Date: 2017-02-08
+Title: Bayesian Evaluation of Variant Involvement in Mendelian Disease
+Version: 4.0
+Date: 2017-02-24
 Author: Daniel Greene
 Maintainer: Daniel Greene <dg333@cam.ac.uk>
 Description: A fast integrative genetic association test for rare diseases.
@@ -15,6 +14,6 @@ Suggests: knitr
 VignetteBuilder: knitr
 RoxygenNote: 5.0.1
 NeedsCompilation: yes
-Packaged: 2017-02-16 12:45:12 UTC; dg333
+Packaged: 2017-03-01 01:03:31 UTC; dg333
 Repository: CRAN
-Date/Publication: 2017-02-16 17:27:38
+Date/Publication: 2017-03-01 08:36:15

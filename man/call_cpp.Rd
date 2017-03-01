@@ -25,7 +25,7 @@ call_cpp(samples_per_chain, y, block_starts, block_ends, cases, counts, min_ac,
 
 \item{counts}{Vector of variant counts.}
 
-\item{min_ac}{Minimum allele count per individual to be considered to have a pathogenic combination of variants. '1' could correspond to a dominant inheritance hypothesis whereas '2' could correspond to a recessive inheritance hypothesis. Can either be an integer value (then used for all samples), or integer vector of \code{length(y)}, useful for example when different samples have different ploidy.}
+\item{min_ac}{Numeric vector of length the same as \code{y} or length \code{1} (in which case it is repeated to make it the same length as \code{y}) giving the minimum number of alleles at pathogenic variant sites each individual requires in order to classify as having a `pathogenic allele configuration'. If For example, \code{1} could correspond to hypothesis of dominant inheritance hypothesis. If there are differences in ploidy between individuals in the locus, it is necessary to set it on an sample level basis - e.g. to incorporate information about gender if the locus lies on the X chromosome.}
 
 \item{tau_shape}{Beta distribution parameterisation of benign variant configuration rate of affection, q.}
 
@@ -76,7 +76,7 @@ call_cpp(samples_per_chain, y, block_starts, block_ends, cases, counts, min_ac,
 \item{check}{Logical value indicating whether to perform validation on the arguments before calling the c++ function.}
 }
 \value{
-Object of class \code{BeviMed}, containing the output of the MCMC sampling.
+Object of class \code{BeviMed_raw}, containing the output of the MCMC sampling.
 }
 \description{
 Allows other functions in the package to call the c++ function passing arguments more succinctly and by name.

@@ -33,7 +33,7 @@
 #' @template return_x_trace
 #' @template burn
 #' @param check Logical value indicating whether to perform validation on the arguments before calling the c++ function. 
-#' @return Object of class \code{BeviMed}, containing the output of the MCMC sampling.
+#' @return Object of class \code{BeviMed_raw}, containing the output of the MCMC sampling.
 #' @importFrom Rcpp evalCpp
 #' @useDynLib BeviMed
 call_cpp <- function(
@@ -123,96 +123,62 @@ call_cpp <- function(
 	)
 
 	if (burn > 0) {
-		raw <- c(
-			lapply(
-				raw[c(
-					"y_log_lik",
-					"y_log_lik_t_equals_1",
-					"z",
-					"x",
-					"logit_omega",
-					"log_phi"
-				)],
-				function(x) x[-seq(length.out=burn),]
-			),
-			lapply(
-				raw[c("swap_accept", "swap_at_temperature")],
-				function(x) x[-seq(length.out=chain_swaps_per_cycle * burn)]
-			),
-			raw[c("terminal_z", "terminal_log_phi", "terminal_logit_omega")]
+		raw$traces <- lapply(
+			raw$traces,
+			function(x) x[-seq(length.out=burn),,drop=FALSE]
+		)
+		raw$swaps <- lapply(
+			raw$swaps,
+			function(x) x[-seq(length.out=chain_swaps_per_cycle * burn)]
 		)
 	}
 
 	structure(
-		c(
-			raw,
-			list(
-				omega_shape=omega_shape,
-				pi_shape=pi_shape,
-				tau_shape=tau_shape,
-				variant_weights=variant_weights,
-				temperatures=temperatures,
-				estimate_phi=estimate_phi,
-				estimate_omega=estimate_omega,
-				y=y,
-				min_ac=min_ac,
-				variant_table=data.frame(
-					variant=unlist(mapply(SIMPLIFY=FALSE, FUN=rep, seq(length(block_starts)), block_ends-block_starts)),
-					case=cases+1,
-					count=counts
-				),
-				n=length(y),
-				k=ncol(z0_matrix)
-			)
-		),
-		class="BeviMed"
+		class="BeviMed_raw",
+		raw
 	)
 }
 
-#' Calculate the Marginal Likelihood by summation over power posterior likelihood exptectances
+#' @title Calculate marginal likelihood from power posteriors output
+#'
+#' @description Calculate the Marginal Likelihood by summation over power posterior likelihood exptectances
 #'
 #' @template y_log_lik_t_equals_1_traces
 #' @param temperatures Numeric vector of temperatures used to produce \code{y_log_lik_t_equals_1_traces}.
 #' @return Numeric value of estimated log marginal likelihood.
 sum_ML_over_PP <- function(y_log_lik_t_equals_1_traces, temperatures) {
-	sum(mapply(FUN=function(y_lik, t_diff) { log(mean(exp(t_diff*y_lik-min(t_diff*y_lik))))+min(t_diff*y_lik) }, split(t(y_log_lik_t_equals_1_traces)[-length(temperatures),], seq(length(temperatures)-1)), diff(temperatures)))
+	sum(mapply(FUN=function(y_lik, t_diff) { log(mean(exp(t_diff*y_lik-min(t_diff*y_lik))))+min(t_diff*y_lik) }, split(t(y_log_lik_t_equals_1_traces)[-length(temperatures),], seq(length.out=length(temperatures)-1)), diff(temperatures)))
 }
 
-#' Concatenate objects of class \code{BeviMed}
+#' Concatenate objects of class \code{BeviMed_raw}
 #'
 #' This function could be used to stitch together consecutive chains to create one larger sampled set of states from the MCMC procedure.
-#' @param ... BeviMed objects
+#' 
+#' @param objects \code{list} of \code{BeviMed_raw} objects.
 #' @return \code{BeviMed} object.
 #' @importFrom stats setNames
-stack_BeviMeds <- function(...) {
-	bevis <- list(...)
-	stopifnot(all(sapply(bevis, class) == "BeviMed"))
+stack_BeviMeds <- function(objects) {
+	stopifnot(all(sapply(objects, class) == "BeviMed_raw"))
 
 	structure(
-		c(
-			lapply(
-				setNames(nm=c(
-					"y_log_lik",
-					"y_log_lik_t_equals_1",
-					"z",
-					"x",
-					"logit_omega",
-					"log_phi"
-				)),
-				function(trace_name) do.call(what=rbind, lapply(bevis, "[[", trace_name))
-			),
-			bevis[[length(bevis)]][-which(names(bevis[[length(bevis)]]) %in% c("y_log_lik", "y_log_lik_t_equals_1", "z", "x", "logit_omega", "log_phi"))]
+		list(
+			traces=do.call(what=Map, c(list(f=rbind), lapply(objects, "[[", "traces"))),
+			swaps=do.call(what=c, c(list(f=rbind), lapply(objects, "[[", "swaps"))),
+			final=objects[[length(objects)]]$final
 		),
-		class="BeviMed"
+		class="BeviMed_raw"
 	)
 }
 
-#' Estimate confidence interval for estimated marginal likelihood by simulation
+#' @title Estimate confidence interval for estimated marginal likelihood
 #'
+#' @description Central limit theorem not applicable so use simulation to estimate confidence interval for evidence.
+#' 
 #' @template temperatures
 #' @template y_log_lik_t_equals_1_traces
 #' @template confidence
 #' @template simulations
+#' @return Confidence interval as numeric vector of length 2.
 #' @importFrom stats rt quantile
 CI_gamma1_evidence <- function(
 	temperatures,
@@ -229,7 +195,7 @@ CI_gamma1_evidence <- function(
 
 	overall_mean <- apply(MARGIN=1, FUN=mean, X=exp(t(y_log_lik_t_equals_1_traces[,-ncol(y_log_lik_t_equals_1_traces)]) * diff(temperatures)))
 
-	estimate_var_by_temp <- mapply(FUN=function(overall, batch) b / (a-1) * sum((batch-overall)^2), overall_mean, split(batch_means, seq(nrow(batch_means))))
+	estimate_var_by_temp <- mapply(FUN=function(overall, batch) b / (a-1) * sum((batch-overall)^2), overall_mean, split(batch_means, seq(length.out=nrow(batch_means))))
 
 	samples <- mapply(SIMPLIFY=TRUE, FUN=function(est_mean, est_var) est_mean + (rt(df=a-1, n=simulations) * sqrt(est_var) / sqrt(a)), overall_mean, estimate_var_by_temp)
 
@@ -238,9 +204,10 @@ CI_gamma1_evidence <- function(
 	quantile(probs=c((1-confidence)/2,1-(1-confidence)/2), simulated_MLs)
 }
 
-#' Apply the MCMC algorithm in blocks until conditions are met
+#' @title Apply the MCMC algorithm in blocks until conditions are met
 #'
-#' Sample blocks of a given size until either the estimated log marginal likelihood falls within a given confidence interval, there is sufficient confidence that the log Bayes factor of model gamma = 1 to model gamma = 0 is at most a certain quantity, or a certain number of blocks have been sampled.
+#' @description Sample blocks of a given size until either the estimated log marginal likelihood falls within a given confidence interval, there is sufficient confidence that the evidence model gamma = 1 is at most a certain quantity, or a certain number of blocks have been sampled.
+#'
 #' @template y
 #' @param blocks_remaining Maximum number of blocks left before termination.
 #' @param start_zs Initial (logical) z-matrix.
@@ -250,8 +217,7 @@ CI_gamma1_evidence <- function(
 #' @param tolerance Maximum width for confidence_interval of log marginal likelihood to allow before stopping the chain.
 #' @template confidence
 #' @template simulations
-#' @template tau0_shape
-#' @param BF_threshold Numeric value used to determine whether to stop the sampling procedure after successive blocks. If we are confident (to the level of \code{confidence}) that the log Bayes factor between models gamma = 1 and gamma = 0 is under this value, we stop the sampling as soon as possible.
+#' @param log_evidence_threshold Numeric value used to determine whether to stop the sampling procedure after successive blocks. If we are confident (to the level of \code{confidence}) that the evidence for model gamma = 1 is under this value, sampling is halted.
 #' @template y_log_lik_t_equals_1_traces
 #' @param full_block_traces List of outputs of calls to MCMC routine. 
 #' @template verbose
@@ -267,14 +233,13 @@ stop_chain <- function(
 	tolerance=1,
 	confidence=0.95,
 	simulations=1000,
-	tau0_shape=c(1,1),
-	BF_threshold=-Inf,
+	log_evidence_threshold=-Inf,
 	y_log_lik_t_equals_1_traces=matrix(ncol=length(temperatures),nrow=0),
 	full_block_traces=list(),
 	verbose=FALSE,
 	...
 ) {
-	if (verbose) cat("Sampling up to ", blocks_remaining, " more blocks to get marginal likelihood within tolerance of ", tolerance, "\n", sep="\n")
+	if (verbose) cat("Sampling up to ", blocks_remaining, " more blocks to get marginal likelihood within tolerance of ", tolerance, "\n", sep="")
 
 	mc <- call_cpp(
 		z0_matrix=start_zs,
@@ -287,7 +252,7 @@ stop_chain <- function(
 
 	y_ll <- rbind(
 		y_log_lik_t_equals_1_traces,
-		mc[["y_log_lik_t_equals_1"]]
+		mc[["traces"]][["y_log_lik_t_equals_1"]]
 	)
 	
 	confidence_interval <- CI_gamma1_evidence(temperatures, y_ll, confidence=confidence, simulations=simulations)
@@ -297,19 +262,19 @@ stop_chain <- function(
 		print(round(digits=2, confidence_interval))
 	}
 
-	if (diff(confidence_interval) < tolerance | (confidence_interval[2]-gamma0_evidence(y, tau0_shape=tau0_shape)) < BF_threshold | blocks_remaining <= 1) {
-		do.call(what=stack_BeviMeds, c(full_block_traces, list(mc)))
+	if (diff(confidence_interval) < tolerance | confidence_interval[2] < log_evidence_threshold | blocks_remaining <= 1) {
+		stack_BeviMeds(c(full_block_traces, list(mc)))
 	} else {
 		stop_chain(
 			y=y,
 			blocks_remaining=blocks_remaining - 1,
 			tolerance=tolerance,
 			confidence=confidence,
-			start_zs=mc[["terminal_z"]],
-			start_logit_omegas=mc[["terminal_logit_omega"]],
-			start_log_phis=mc[["terminal_log_phi"]],
+			start_zs=mc[["final"]][["z"]],
+			start_logit_omegas=mc[["final"]][["logit_omega"]],
+			start_log_phis=mc[["final"]][["log_phi"]],
 			temperatures=temperatures,
-			BF_threshold=BF_threshold,
+			log_evidence_threshold=log_evidence_threshold,
 			y_log_lik_t_equals_1_traces=y_ll,
 			full_block_traces=c(full_block_traces, list(mc)),
 			verbose=verbose,
@@ -318,9 +283,11 @@ stop_chain <- function(
 	}
 }
 
-#' Tune the proposal standard deviations for the Metropolis-Hastings updates of either phi or omega
+#' @title Tune proposal standard deviation for MH sampled parameters
 #'
-#' @param tune_for Character vector, where only the first element is used, determining which variable to tune the proposal SDs for.
+#' @description Tune the proposal standard deviations for the Metropolis-Hastings updates of either phi or omega
+#'
+#' @param tune_for Character vector of length one, naming which variable to tune the proposal SDs for: either \code{"logit_omega"} or \code{"log_phi"}.
 #' @param initial_proposal_sds Numeric vector with the initial values of the proposal SDs.
 #' @param target_acceptance_range Numeric vector of length 2 where the first element is the lower bound for the acceptance interval and the second is the upper bound.
 #' @param other_param_proposal_sd The proposal SD to use for \code{log_phi} when tuning \code{logit_omega} or vice versa.
@@ -330,7 +297,7 @@ stop_chain <- function(
 #' @template verbose
 #' @param ... Other arguments to be passed to \code{\link{call_cpp}}.
 #' @return Numeric vector of proposal SDs for the different temperature chains.
-tune_proposal_sds <- function(tune_for=c("logit_omega", "log_phi"), initial_proposal_sds, target_acceptance_range=c(0.3,0.7), other_param_proposal_sd=0.7, max_tuning_cycles=10, initial_rate=1, rate_decay=1.2, verbose=FALSE, ...) {
+tune_proposal_sds <- function(tune_for=c("logit_omega"), initial_proposal_sds, target_acceptance_range=c(0.3,0.7), other_param_proposal_sd=0.7, max_tuning_cycles=10, initial_rate=1, rate_decay=1.2, verbose=FALSE, ...) {
 	stopifnot(all(tune_for %in% c("logit_omega", "log_phi")))
 
 	if (verbose) {
@@ -348,21 +315,24 @@ tune_proposal_sds <- function(tune_for=c("logit_omega", "log_phi"), initial_prop
 		if (verbose) cat("Tuning cycle ", cycle, "\n\tTest proposal SDs:\n\t\t", paste0(collapse=" : ", round(digits=2, current_proposal_sds)), "\n", sep="")
 		out <- if (tune_for[1] == "logit_omega") call_cpp(logit_omega_proposal_sds=current_proposal_sds, log_phi_proposal_sds=rep(other_param_proposal_sd, length(current_proposal_sds)), ...) else call_cpp(log_phi_proposal_sds=current_proposal_sds, logit_omega_proposal_sds=rep(other_param_proposal_sd, length(current_proposal_sds)), ...)
 
-		acceptances <- apply(out[[tune_for[1]]], 2, function(var_vals) mean(var_vals[-length(var_vals)] != var_vals[-1]))
+		acceptances <- apply(out[["traces"]][[tune_for[1]]], 2, function(var_vals) mean(var_vals[-length(var_vals)] != var_vals[-1]))
 		current_proposal_sds <- mapply(SIMPLIFY=TRUE, FUN=function(prop_sd, acc_rate) if (acc_rate < target_acceptance_range[1] | acc_rate > target_acceptance_range[2]) { match.fun(if (acc_rate < target_acceptance_range[1]) "/" else "*")(prop_sd, (1 + initial_rate * rate_decay ^ (-cycle+1))) } else { prop_sd }, current_proposal_sds, acceptances)
 
 		if (verbose) cat("\tAcceptance rates:\n\t\t", paste0(collapse=" : ", round(digits=2, acceptances)), "\n", sep="")
+		cycle <- cycle + 1
 	}
 	if (verbose) cat("Terminating\n")
 	current_proposal_sds
 }
 
-#' Tune temperatures using interval bisection to minimimise Kullback-Liebler divergence between adjacent power posteriors
+#' @title Tune temperatures
+#'
+#' @description Tune temperatures using interval bisection to minimimise Kullback-Liebler divergence between adjacent power posteriors
 #'
 #' @param number_of_temperatures Integer value giving number of tuned temperatures (including 0 and 1) to obtain.
-#' @param return_temperatures Logical value determining whether to return just the numeric vector of tuned temperatures or to return the \code{BeviMed}-classed object containing the output of the MCMC sampling.
+#' @param return_temperatures Logical value determining whether to return just the numeric vector of tuned temperatures or to return the \code{BeviMed_m}-classed object containing the output of the MCMC sampling.
 #' @param ... Other arguments to pass to \code{call_cpp}.
-#' @return If \code{return_temperatures == TRUE}, a numeric vector of tuned temperatures, otherwise an object of class \code{BeviMed}.
+#' @return If \code{return_temperatures == TRUE}, a numeric vector of tuned temperatures, otherwise an object of class \code{BeviMed_m}.
 #' @importFrom stats var
 tune_temperatures <- function(
 	number_of_temperatures,
@@ -375,27 +345,51 @@ tune_temperatures <- function(
 		...
 	))
 
-	E <- sapply(chains, function(ch) mean(ch[["y_log_lik_t_equals_1"]]))
-	V <- sapply(chains, function(ch) var(ch[["y_log_lik_t_equals_1"]]))
+	E <- sapply(chains, function(ch) mean(ch[["traces"]][["y_log_lik_t_equals_1"]]))
+	V <- sapply(chains, function(ch) var(ch[["traces"]][["y_log_lik_t_equals_1"]]))
 
 	while (length(temperatures) <= number_of_temperatures) {
 		areas <- diff(temperatures) * diff(E)
 		largest <- which.max(areas)
 		t_pair <- c(largest, largest+1)
 		t_intersect <- mean(temperatures[t_pair])
-		temperatures <- c(temperatures[seq(largest)], t_intersect, temperatures[(largest+1):length(temperatures)])
-		chains <- c(chains[seq(largest)], list(call_cpp(temperatures=t_intersect, ...)), chains[(largest+1):length(chains)])
+		temperatures <- c(temperatures[seq(length.out=largest)], t_intersect, temperatures[(largest+1):length(temperatures)])
+		chains <- c(chains[seq(length.out=largest)], list(call_cpp(temperatures=t_intersect, ...)), chains[(largest+1):length(chains)])
 
-		E <- sapply(chains, function(ch) mean(ch[["y_log_lik_t_equals_1"]]))
-		V <- sapply(chains, function(ch) var(ch[["y_log_lik_t_equals_1"]]))
+		E <- sapply(chains, function(ch) mean(ch[["traces"]][["y_log_lik_t_equals_1"]]))
+		V <- sapply(chains, function(ch) var(ch[["traces"]][["y_log_lik_t_equals_1"]]))
 	}
 	
 	if (return_temperatures) temperatures else list(chains=chains, E=E, V=V, temperatures=temperatures)
 }
 
-#' Perform inference under model gamma = 1
+get_G_args <- function(G) {
+	counts <- as.integer(G)
+	variants <- rep(seq(length.out=ncol(G)), each=nrow(G))
+	cases <- rep(seq(length.out=nrow(G)), times=ncol(G))
+
+	block_ends <- cumsum(lapply(split(counts, variants), function(cnts) sum(cnts > 0)))
+	block_starts <- c(0, block_ends[-length(block_ends)])
+	list(
+		cases=cases[counts > 0],
+		counts=counts[counts > 0],
+		block_ends=block_ends,
+		block_starts=block_starts
+	)
+}
+
+to_var_tab <- function(G_args) {
+	data.frame(
+		variant=unlist(mapply(SIMPLIFY=FALSE, FUN=rep, seq(length.out=length(G_args$block_starts)), G_args$block_ends-G_args$block_starts)),
+		case=G_args$cases,
+		count=G_args$counts
+	)
+}
+
+#' Perform inference under model gamma = 1 conditional on mode of inheritance
 #'
-#' This function is the main user-interface to the underlying c++ MCMC sampling routine.
+#' Sample from posterior distribution of parameters under model gamma = 1 and conditional on mode of inheritance, set via the \code{min_ac} argument.
+#'
 #' @template y
 #' @template G_matrix
 #' @template min_ac
@@ -404,12 +398,13 @@ tune_temperatures <- function(
 #' @template omega_shape 
 #' @template samples_per_chain
 #' @param stop_early Logical value determining whether to attempt to stop the sampling as soon as certain conditions are met (i.e. either the estimated marginal log likelihood lies within a certain confidence interval, or we are sufficiently confidence that the log Bayes factor against of model gamma = 1 over model gamma = 0 is sufficiently low).
-#' @param blocks Maximum number of blocks of length \code{samples_per_chain} samples to draw before either the confidence interval for the marginal likelihood under the model gamma = 1 is sufficiently small or terminating the sampling.
+#' @param blocks Maximum number of blocks of \code{samples_per_chain} samples to draw before either the confidence interval for the marginal likelihood under the model gamma = 1 is sufficiently small or terminating the sampling. This parameter is ignored if unless \code{stop_early==TRUE}.
 #' @template burn
 #' @template temperatures
 #' @param tune_temps Integer value - if greater than 0, the \code{temperatures} argument is ignored, and instead \code{tune_temps} tuned temperatures are used instead.
 #' @template return_z_trace
 #' @template return_x_trace
+#' @param raw_only Logical value determining whether to return raw output of MCMC routine only.
 #' @param swaps Number of swaps between adjacent tempered chains to perform per update cycle.
 #' @param optimise_z0 Logical value determining whether to use a simulated annealing optimisation run to tune the initial values of \code{z}.
 #' @param tune_omega_and_phi_proposal_sd Logical value determining whether the proposal SDs of the Metropolis-Hastings estimated parameters should be tuned for a target acceptance range.
@@ -420,10 +415,18 @@ tune_temperatures <- function(
 #' @param log_phi_sd SD for normal prior on scaling factor phi. Setting to 0 causes the weights to be fixed and not estimated.
 #' @template tandem_variant_updates
 #' @param ... Other arguments to be passed to \code{\link{stop_chain}} and/or \code{\link{tune_proposal_sds}}.
-#' @return An object of class \code{BeviMed}.
+#' @return An object of class \code{BeviMed_m}.
+#' @details A \code{BeviMed_m} object is a list containing elements:
+#' \itemize{
+#' \item `parameters': a list containing arguments used in the function call,
+#' \item `traces': a list of traces of model parameters from all MCMC chains for each parameter. Parameters sampled are z, omega, phi and x (the indicator of having a pathogenic configuration of alleles). The list of traces is named by parameter name, and each is a matrix where the rows correspond to samples. $z has k columns for each temperature, with the samples from the true posterior (i.e. with temperature equal to 1) of z corresponding to the final k columns. Likewise, the true posterior is given by the final column for the traces of phi and omega. The trace of x is only given for temperature equal to 1 to reduce memory usage.
+#' \item `final': a list named by model parameter giving the final sample of each,
+#' \item `swaps': a list with an element named `accept' which is a logical vector whose ith element indicates whether the ith swap between adjacent tempered chains was accepted or not, and an element named `at_temperature`, an integer vector whose ith element indicates which pair of consecutive temperatures was the ith to be proposed for swapping (giving the lowest one). 
+#' }
 #' @export
 #' @importFrom stats rnorm runif rbeta sd
-bevimed <- function(
+#' @seealso \code{\link{bevimed_m}}, \code{\link{prob_association_m}}
+bevimed_m <- function(
 	y,
 	G,
 	min_ac=1L,
@@ -437,7 +440,8 @@ bevimed <- function(
 	temperatures=(0:6/6)^2,
 	tune_temps=0,
 	return_z_trace=TRUE,
-	return_x_trace=FALSE,
+	return_x_trace=TRUE,
+	raw_only=FALSE,
 	swaps=as.integer(length(temperatures)/2),
 	optimise_z0=FALSE,
 	tune_omega_and_phi_proposal_sd=FALSE,
@@ -446,7 +450,7 @@ bevimed <- function(
 	standardise_weights=TRUE,
 	log_phi_mean=-0.15,
 	log_phi_sd=sqrt(0.3),
-	tandem_variant_updates=if (max(min_ac) == 1) 0 else min(sum(y), nrow(G)),
+	tandem_variant_updates=if (max(min_ac) == 1) 0 else min(sum(y), ncol(G)),
 	...
 ) {
 	stopifnot(is.matrix(G))
@@ -454,6 +458,7 @@ bevimed <- function(
 	stopifnot(is.numeric(G))
 	stopifnot(is.logical(y))
 	stopifnot(min_ac > 0)
+	stopifnot(identical(as.numeric(range(temperatures)), as.numeric(c(0, 1))))
 
 	estimate_phi <- !((log_phi_sd == 0) | is.null(variant_weights))
 
@@ -472,15 +477,10 @@ bevimed <- function(
 			}
 		} 
 		
-	counts <- as.integer(G)
-	variants <- rep(seq(ncol(G)), each=nrow(G))
-	cases <- rep(seq(nrow(G)), times=ncol(G))
-
-	block_ends <- cumsum(lapply(split(counts, variants), function(cnts) sum(cnts > 0)))
-	block_starts <- c(0, block_ends[-length(block_ends)])
+	G_args <- get_G_args(G)
 
 	y1_cases_with_more_than_1_variant <- apply(G > 0, 1, sum) > 1
-	y1_variants <- lapply(split(t(G[y1_cases_with_more_than_1_variant,,drop=FALSE] > 0), seq(sum(y1_cases_with_more_than_1_variant))), which)
+	y1_variants <- lapply(split(t(G[y1_cases_with_more_than_1_variant,,drop=FALSE] > 0), seq(length.out=sum(y1_cases_with_more_than_1_variant))), which)
 	y1_block_ends <- cumsum(lapply(y1_variants, length))
 	y1_block_starts <- c(0, y1_block_ends[-length(y1_block_ends)])
 	adjusted_tvu <- if (sum(y1_cases_with_more_than_1_variant) > 0) tandem_variant_updates else 0
@@ -491,10 +491,10 @@ bevimed <- function(
 
 	reused_arguments <- list(
 		y=y,
-		block_starts=block_starts,
-		block_ends=block_ends,
-		cases=cases[counts > 0]-1,
-		counts=counts[counts > 0],
+		block_starts=G_args$block_starts,
+		block_ends=G_args$block_ends,
+		cases=G_args$cases-1L,
+		counts=G_args$counts,
 		min_ac=min_ac,
 		tau_shape=tau_shape,
 		pi_shape=pi_shape,
@@ -549,7 +549,7 @@ bevimed <- function(
 				return_z_trace=FALSE,
 				return_x_trace=FALSE
 			)
-		))[["terminal_z"]]
+		))[["final"]][["z"]]
 	} else {
 		matrix(runif(ncol(G) * length(temperatures)) < omega_shape[1]/sum(omega_shape), nrow=length(temperatures), ncol=ncol(G))
 	}
@@ -560,6 +560,7 @@ bevimed <- function(
 			function(tune_for) do.call(what=tune_proposal_sds, c(
 				reused_arguments, 
 				list(
+					tune_for=tune_for,
 					initial_proposal_sds=rep(if (tune_for == "log_phi") initial_log_phi_proposal_sd else initial_logit_omega_proposal_sd, length(temperatures)),
 					samples_per_chain=tune_block_size,
 					burn=0,
@@ -577,7 +578,7 @@ bevimed <- function(
 			function(tune_for) rep(if (tune_for == "log_phi") initial_log_phi_proposal_sd else initial_logit_omega_proposal_sd, length(temperatures))
 		})
 
-	if (stop_early) {
+	result <- if (stop_early) {
 		burn <- do.call(what=call_cpp, c(
 			reused_arguments,
 			list(
@@ -601,9 +602,9 @@ bevimed <- function(
 				samples_per_chain=samples_per_chain,
 				y_log_lik_t_equals_1=matrix(ncol=length(temperatures),nrow=0),
 				burn=0,
-				start_zs=burn[["terminal_z"]],
-				start_logit_omegas=burn[["terminal_logit_omega"]],
-				start_log_phis=burn[["terminal_log_phi"]],
+				start_zs=burn[["final"]][["z"]],
+				start_logit_omegas=burn[["final"]][["logit_omega"]],
+				start_log_phis=burn[["final"]][["log_phi"]],
 				temperatures=temperatures,
 				blocks_remaining=max(1, blocks),
 				logit_omega_proposal_sds=proposal_sds[["logit_omega"]],
@@ -635,17 +636,43 @@ bevimed <- function(
 			)
 		)
 	}
+
+	if (raw_only)
+		result
+	else
+		structure(
+			class="BeviMed_m",
+			c(
+				result,
+				list(parameters=list(
+					omega_shape=omega_shape,
+					pi_shape=pi_shape,
+					tau_shape=tau_shape,
+					variant_weights=variant_weights,
+					temperatures=temperatures,
+					estimate_phi=estimate_phi,
+					estimate_omega=estimate_omega,
+					y=y,
+					min_ac=min_ac,
+					variant_table=to_var_tab(G_args),
+					N=length(y),
+					k=ncol(G)
+				))
+			)
+		)
 }
 
-#' Calculate marginal probability of observed genotypes under 'pathogenic region' model
+#' @title Calculate evidence of under pathogenic locus model
 #' 
-#' Marginal probability calculated exactly by integration.
+#' @description Marginal probability of model with aggregated allele counts.
 #' @template y
 #' @param G Integer/logical vector of genotypes by individual corresponding to case-control label \code{y} giving the 'rare variant counts'/'presence of rare variant indicators'.
 #' @template min_ac
 #' @template tau_shape
 #' @template pi_shape
+#' @return Log marginal likelihood.
 #' @export
+#' @seealso \code{\link{gamma0_evidence}}
 region_association_evidence <- function(
 	y,
 	G,
@@ -670,7 +697,8 @@ region_association_evidence <- function(
 	ll_pathogenic+ll_benign
 }
 
-#' Calculate log lower bound for marginal probability of observations under model gamma = 1 by summing likelihood over pathogenic variant (z) configurations, or probabilities that individual variants are pathogenic.
+#' @title Calculate log lower bound for marginal probability under model gamma = 1
+#' @description Calculate log lower bound for marginal probability of data under model gamma = 1 by summing likelihood over pathogenic variant partitions. 
 #' 
 #' @template y
 #' @template G_matrix
@@ -680,7 +708,9 @@ region_association_evidence <- function(
 #' @template pi_shape
 #' @template omega_shape
 #' @param sum_over_variants Subset of variants for whose power set to calculate the direct sum over.
+#' @return Log of marginal likelihood.
 #' @export
+#' @seealso \code{\link{exact_evidence}}
 lower_bound_gamma1_evidence <- function(
 	y,
 	G,
@@ -689,7 +719,7 @@ lower_bound_gamma1_evidence <- function(
 	tau_shape=c(1, 1),
 	pi_shape=c(6, 1),
 	omega_shape=c(2, 8),
-	sum_over_variants=seq(ncol(G))
+	sum_over_variants=seq(length.out=ncol(G))
 ) {
 	z_confs <- as.matrix(do.call(what=expand.grid, rep(list(c(F,T)), length(sum_over_variants))))
 
@@ -723,11 +753,15 @@ lower_bound_gamma1_evidence <- function(
 	}
 }
 
-#' Calculate exact evidence for model gamma=1
+#' @title Calculate exact evidence for model gamma = 1
+#'
+#' @description Directly evaluate evidence for model gamma = 1 by summing likelihood over all partitions of variants. Note, complexity grows exponentially with the number of variants, so is intractable for much more than ten variants.
 #'
 #' @template G_matrix
 #' @param ... Other arguments to pass to \code{\link{lower_bound_gamma1_evidence}}.
+#' @return Log marginal likelihood.
 #' @export
+#' @seealso \code{\link{gamma0_evidence}}, \code{\link{lower_bound_gamma1_evidence}}
 exact_evidence <- function(G, ...) {
-	lower_bound_gamma1_evidence(G=G, sum_over_variants=seq(ncol(G)), ...)
+	lower_bound_gamma1_evidence(G=G, sum_over_variants=seq(length.out=ncol(G)), ...)
 }

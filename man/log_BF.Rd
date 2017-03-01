@@ -2,7 +2,7 @@
 % Please edit documentation in R/convenience.R
 \name{log_BF}
 \alias{log_BF}
-\title{Calculate log Bayes factor between models gamma=1 and gamma=0 given the data}
+\title{Calculate log Bayes factor between model gamma = 1 conditional on a given mode of inheritance and model gamma = 0}
 \usage{
 log_BF(y, tau0_shape = c(1, 1), ...)
 }
@@ -11,12 +11,15 @@ log_BF(y, tau0_shape = c(1, 1), ...)
 
 \item{tau0_shape}{Beta shape hyper-priors for prior on rate of case labels.}
 
-\item{...}{Other arguments to pass to \code{\link{bevimed}}.}
+\item{...}{Arguments to pass to \code{\link{bevimed_m}}.}
 }
 \value{
 Log Bayes factor.
 }
 \description{
-Calculate log Bayes factor between models gamma=1 and gamma=0 given the data
+Compute log Bayes factor of model gamma = 1 against model gamma = 0 for just one mode of inheritance.
+}
+\seealso{
+\code{\link{bevimed_m}}, \code{\link{prob_association_m}}
 }
 

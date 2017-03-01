@@ -2,33 +2,22 @@
 % Please edit documentation in R/convenience.R
 \name{prob_pathogenic}
 \alias{prob_pathogenic}
-\title{Calculate probability of pathogencity for variants in region given a prior probability of association between case label and the region}
+\title{Calculate variant marginal probabilities of pathogencity}
 \usage{
-prob_pathogenic(y, G, ploidy = rep(2L, length(y)),
-  prior_prob_association = 0.01, prior_prob_dominant = 0.5,
-  tau0_shape = c(1, 1), by_MOI = FALSE, ...)
+prob_pathogenic(by_MOI = FALSE, ...)
 }
 \arguments{
-\item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
-
-\item{G}{Integer matrix of variant counts per individual, one row per individual and one column per variant.}
-
-\item{ploidy}{Integer vector giving ploidy of samples.}
-
-\item{prior_prob_association}{The prior probability of association.}
-
-\item{prior_prob_dominant}{The prior probability of dominant inheritance given that there is an association.}
-
-\item{tau0_shape}{Beta shape hyper-priors for prior on rate of case labels.}
-
 \item{by_MOI}{Logical value determining whether to return probabilities broken down by mode of inheritance.}
 
-\item{...}{Other arguments to pass to \code{\link{bevimed}}.}
+\item{...}{Arguments to pass to \code{\link{bevimed}}.}
 }
 \value{
-Probabilities of pathogenicity.
+If \code{by_MOI} is \code{FALSE}, a vector of probabilities of pathogenicity for each variant, otherwise a matrix of probabilities of pathogenicity conditional on mode of inheritance, with a column for each variant and two rows corresponding to each mode of inheritance.
 }
 \description{
-Calculate probability of pathogencity for variants in region given a prior probability of association between case label and the region
+Calls \code{\link{bevimed}} and \code{\link{extract_prob_pathogenic}} to obtain marginal probabilities of pathogenicity.
+}
+\seealso{
+\code{\link{extract_prob_pathogenic}}, \code{\link{bevimed}}
 }
 

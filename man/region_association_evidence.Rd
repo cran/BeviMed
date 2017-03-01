@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{region_association_evidence}
 \alias{region_association_evidence}
-\title{Calculate marginal probability of observed genotypes under 'pathogenic region' model}
+\title{Calculate evidence of under pathogenic locus model}
 \usage{
 region_association_evidence(y, G, min_ac = 1L, tau_shape = c(1, 1),
   pi_shape = c(2, 1))
@@ -12,13 +12,19 @@ region_association_evidence(y, G, min_ac = 1L, tau_shape = c(1, 1),
 
 \item{G}{Integer/logical vector of genotypes by individual corresponding to case-control label \code{y} giving the 'rare variant counts'/'presence of rare variant indicators'.}
 
-\item{min_ac}{Minimum allele count per individual to be considered to have a pathogenic combination of variants. '1' could correspond to a dominant inheritance hypothesis whereas '2' could correspond to a recessive inheritance hypothesis. Can either be an integer value (then used for all samples), or integer vector of \code{length(y)}, useful for example when different samples have different ploidy.}
+\item{min_ac}{Numeric vector of length the same as \code{y} or length \code{1} (in which case it is repeated to make it the same length as \code{y}) giving the minimum number of alleles at pathogenic variant sites each individual requires in order to classify as having a `pathogenic allele configuration'. If For example, \code{1} could correspond to hypothesis of dominant inheritance hypothesis. If there are differences in ploidy between individuals in the locus, it is necessary to set it on an sample level basis - e.g. to incorporate information about gender if the locus lies on the X chromosome.}
 
 \item{tau_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with non-pathogenic variant combinations (i.e. they have less than \code{min_ac} variants.}
 
 \item{pi_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with pathogenic variant combinations (i.e. they have at least \code{min_ac} variants.}
 }
+\value{
+Log marginal likelihood.
+}
 \description{
-Marginal probability calculated exactly by integration.
+Marginal probability of model with aggregated allele counts.
+}
+\seealso{
+\code{\link{gamma0_evidence}}
 }
 

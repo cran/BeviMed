@@ -2,7 +2,7 @@
 % Please edit documentation in R/generics.R
 \name{print.BeviMed}
 \alias{print.BeviMed}
-\title{Print readable summary of \code{BeviMed} object.}
+\title{Print readable summary of \code{BeviMed} object}
 \usage{
 \method{print}{BeviMed}(x, ...)
 }
@@ -12,9 +12,12 @@
 \item{...}{Arguments passed to \code{\link{summary.BeviMed}}}
 }
 \value{
-Prints a summary
+Prints a summary.
 }
 \description{
-Print readable summary of \code{BeviMed} object.
+Print summary statistics of BeviMed inference, including probability of association, probability of dominant inheritance given association and probability of pathogenicity of each variant under dominant and recessive inheritance.
+}
+\seealso{
+\code{\link{summary.BeviMed}}
 }
 

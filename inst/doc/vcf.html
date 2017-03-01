@@ -12,7 +12,7 @@
 
 <meta name="author" content="Daniel Greene" />
 
-<meta name="date" content="2017-02-16" />
+<meta name="date" content="2017-03-01" />
 
 <title>BeviMed with VCFs</title>
 
@@ -52,7 +52,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 
 <h1 class="title toc-ignore">BeviMed with VCFs</h1>
 <h4 class="author"><em>Daniel Greene</em></h4>
-<h4 class="date"><em>2017-02-16</em></h4>
+<h4 class="date"><em>2017-03-01</em></h4>
 
 
 
@@ -71,10 +71,10 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <li><code>warn_if_AF_greater_than</code> - <code>numeric</code> value giving threshold allele frequency for generating a warning.</li>
 </ul>
 <p>You can invoke the function simply to obtain the allele count matrix and pass straight to <code>bevimed</code>, along with phenotype label:</p>
-<pre class="sourceCode r"><code class="sourceCode r">G &lt;-<span class="st"> </span><span class="kw">vcf2matrix</span>(<span class="st">&quot;my-vcf.vcf.gz&quot;</span>, <span class="dt">chr=</span><span class="st">&quot;2&quot;</span>, <span class="dt">from=</span><span class="dv">1</span>, <span class="dt">to=</span><span class="fl">1e4</span>)
+<pre class="sourceCode r"><code class="sourceCode r">ac_matrix &lt;-<span class="st"> </span><span class="kw">vcf2matrix</span>(<span class="st">&quot;my-vcf.vcf.gz&quot;</span>, <span class="dt">chr=</span><span class="st">&quot;2&quot;</span>, <span class="dt">from=</span><span class="dv">1</span>, <span class="dt">to=</span><span class="fl">1e4</span>)
 pheno &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file=</span><span class="st">&quot;my-phenotype-data.txt&quot;</span>, <span class="dt">header=</span><span class="ot">TRUE</span>)
 
-<span class="kw">bevimed</span>(<span class="dt">y=</span>pheno$disease_status, G)</code></pre>
+<span class="kw">bevimed</span>(<span class="dt">y=</span>pheno$disease_status, <span class="dt">G=</span>ac_matrix)</code></pre>
 
 
 

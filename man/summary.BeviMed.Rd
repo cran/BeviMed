@@ -2,29 +2,32 @@
 % Please edit documentation in R/generics.R
 \name{summary.BeviMed}
 \alias{summary.BeviMed}
-\title{Create summary of \code{BeviMed} classed-object}
+\title{Summarise a \code{BeviMed} object}
 \usage{
-\method{summary}{BeviMed}(object, gamma1_prior = 0.01,
-  tau0_shape = object[["tau_shape"]], confidence = 0.95,
-  simulations = 1000, ...)
+\method{summary}{BeviMed}(object, ...)
 }
 \arguments{
 \item{object}{Object of class \code{BeviMed}.}
 
-\item{gamma1_prior}{Prior probability of that gamma = 1.}
-
-\item{tau0_shape}{Beta shape hyper-priors for prior on rate of case labels.}
-
-\item{confidence}{Numeric value of statistical confidence with which returning interval should contain the true value.}
-
-\item{simulations}{Integer value of number of simulations to use in estimation of the confidence interval.}
-
-\item{...}{Non-used arguments.}
+\item{...}{Arguments passed to \code{summary.BeviMed_m}.}
 }
 \value{
 Object of class \code{BeviMed_summary}.
 }
 \description{
-Create summary of \code{BeviMed} classed-object
+Create a summary of inference over model gamma = 0 and model gamma = 1 conditional on each mode of inheritance.
+}
+\details{
+Returns a \code{BeviMed_summary} object, which is a list containing elements:
+\itemize{
+\item `prob_association`: the probability of association under each mode of inheritance,
+\item `prior_prob_association`: the prior probability of association,
+\item `prior_prob_dominant`: the prior probability of dominant inheritance, given association,
+\item `gamma0_evidence': the log evidence under model gamma = 0,
+\item `moi': a list of summaries of mode-of-inheritance conditional inferences, i.e. objects of class \code{BeviMed_m_summary}, on each for dominant and recessive inheritance. The list is also \code{named} "dominant" and "recessive" (see \code{\link{summary.BeviMed_m}} for more details)
+}
+}
+\seealso{
+\code{\link{summary.BeviMed_m}}
 }
 

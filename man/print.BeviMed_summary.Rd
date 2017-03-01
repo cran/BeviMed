@@ -9,14 +9,16 @@
 \arguments{
 \item{x}{\code{BeviMed_summary} object.}
 
-\item{print_prob_pathogenic}{Logical value indicating whether to print list of marginal probabilities of \code{z_j = 1} for all variants \code{j}.}
+\item{print_prob_pathogenic}{Logical value indicating whether to print list of marginal probabilities of \code{z_j = 1} for all variants \code{j} under each mode of inheritance.}
 
-\item{...}{Not-used arguments}
+\item{...}{Unused arguments}
 }
 \value{
 Prints a summary
 }
 \description{
 Print readable summary of \code{BeviMed_summary} object.
+
+Print summary statistics of BeviMed inference, including probability of association, probability of dominant inheritance given association and probability of pathogenicity of each variant under dominant and recessive inheritance.
 }
 

@@ -2,20 +2,20 @@
 % Please edit documentation in R/convenience.R
 \name{gamma1_evidence}
 \alias{gamma1_evidence}
-\title{Calculate marginal probability of observed case-control status under model gamma = 1}
+\title{Calculate evidence under model gamma = 1}
 \usage{
-gamma1_evidence(y, G, min_ac = 1L, ...)
+gamma1_evidence(...)
 }
 \arguments{
-\item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
-
-\item{G}{Integer matrix of variant counts per individual, one row per individual and one column per variant.}
-
-\item{min_ac}{Minimum allele count per individual to be considered to have a pathogenic combination of variants. '1' could correspond to a dominant inheritance hypothesis whereas '2' could correspond to a recessive inheritance hypothesis. Can either be an integer value (then used for all samples), or integer vector of \code{length(y)}, useful for example when different samples have different ploidy.}
-
-\item{...}{Other arguments to pass to \code{\link{bevimed}}.}
+\item{...}{Arguments to pass to \code{\link{bevimed_m}}.}
+}
+\value{
+Log marginal likelihood.
 }
 \description{
-Calculate marginal probability of observed case-control status under model gamma = 1
+Use \code{\link{bevimed_m}} to perform inference under model gamma = 1 and return only the log evidence/integrated likelihood.
+}
+\seealso{
+\code{\link{bevimed_m}}, \code{\link{extract_gamma1_evidence}}
 }
 

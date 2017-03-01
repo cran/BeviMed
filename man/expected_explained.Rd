@@ -2,14 +2,20 @@
 % Please edit documentation in R/convenience.R
 \name{expected_explained}
 \alias{expected_explained}
-\title{Get expected number of cases explained by pathogenic configurations of alleles}
+\title{Calculate expected number of explained cases}
 \usage{
 expected_explained(...)
 }
 \arguments{
-\item{...}{Arguments to be passed to \code{\link{bevimed}}.}
+\item{...}{Arguments to pass to \code{\link{bevimed_m}}.}
+}
+\value{
+Numeric value.
 }
 \description{
-Get expected number of cases explained by pathogenic configurations of alleles
+Use \code{\link{bevimed_m}} to perform inference under model gamma = 1 and return only the expected number of cases explained by pathogenic allele configurations.
+}
+\seealso{
+\code{\link{bevimed_m}}, \code{\link{extract_expected_explained}}
 }
 

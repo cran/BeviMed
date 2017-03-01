@@ -11,7 +11,13 @@ gamma0_evidence(y, tau0_shape = c(1, 1))
 
 \item{tau0_shape}{Beta shape hyper-priors for prior on rate of case labels}
 }
+\value{
+Log marginal likelihood.
+}
 \description{
 Marginal probability calculated exactly by integration.
+}
+\seealso{
+\code{\link{bevimed}}, \code{\link{gamma1_evidence}}
 }
 

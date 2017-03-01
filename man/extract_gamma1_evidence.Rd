@@ -2,14 +2,20 @@
 % Please edit documentation in R/convenience.R
 \name{extract_gamma1_evidence}
 \alias{extract_gamma1_evidence}
-\title{Extract evidence for gamma = 1 model from \code{BeviMed} object.}
+\title{Extract evidence for model gamma = 1}
 \usage{
 extract_gamma1_evidence(x)
 }
 \arguments{
-\item{x}{Object of class \code{BeviMed}.}
+\item{x}{Object of class \code{x_BeviMed_m}. See function \code{\link{bevimed_m}}.}
+}
+\value{
+Log marginal likelihood.
 }
 \description{
-Extract evidence for gamma = 1 model from \code{BeviMed} object.
+Extract evidence from \code{BeviMed_m} object.
+}
+\seealso{
+\code{\link{gamma1_evidence}}, \code{\link{bevimed_m}}
 }
 

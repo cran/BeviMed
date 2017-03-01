@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{CI_gamma1_evidence}
 \alias{CI_gamma1_evidence}
-\title{Estimate confidence interval for estimated marginal likelihood by simulation}
+\title{Estimate confidence interval for estimated marginal likelihood}
 \usage{
 CI_gamma1_evidence(temperatures, y_log_lik_t_equals_1_traces,
   confidence = 0.95, simulations = 1000)
@@ -16,7 +16,10 @@ CI_gamma1_evidence(temperatures, y_log_lik_t_equals_1_traces,
 
 \item{simulations}{Integer value of number of simulations to use in estimation of the confidence interval.}
 }
+\value{
+Confidence interval as numeric vector of length 2.
+}
 \description{
-Estimate confidence interval for estimated marginal likelihood by simulation
+Central limit theorem not applicable so use simulation to estimate confidence interval for evidence.
 }
 

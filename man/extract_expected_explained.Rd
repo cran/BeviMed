@@ -2,14 +2,20 @@
 % Please edit documentation in R/convenience.R
 \name{extract_expected_explained}
 \alias{extract_expected_explained}
-\title{Extract expected number of cases explained by pathogenic conigurations of alleles from \code{BeviMed} object.}
+\title{Extract expected number of explained cases}
 \usage{
 extract_expected_explained(x)
 }
 \arguments{
-\item{x}{Object of class \code{BeviMed}.}
+\item{x}{Object of class \code{x_BeviMed_m}. See function \code{\link{bevimed_m}}.}
+}
+\value{
+Numeric value.
 }
 \description{
-Extract expected number of cases explained by pathogenic conigurations of alleles from \code{BeviMed} object.
+Extract expected number of cases explained by pathogenic configurations of alleles from \code{BeviMed_m} object.
+}
+\seealso{
+\code{\link{expected_explained}}, \code{\link{bevimed_m}}
 }
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{sum_ML_over_PP}
 \alias{sum_ML_over_PP}
-\title{Calculate the Marginal Likelihood by summation over power posterior likelihood exptectances}
+\title{Calculate marginal likelihood from power posteriors output}
 \usage{
 sum_ML_over_PP(y_log_lik_t_equals_1_traces, temperatures)
 }

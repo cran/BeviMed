@@ -6,9 +6,9 @@
 \usage{
 stop_chain(y, blocks_remaining, start_zs, start_logit_omegas, start_log_phis,
   temperatures, tolerance = 1, confidence = 0.95, simulations = 1000,
-  tau0_shape = c(1, 1), BF_threshold = -Inf,
-  y_log_lik_t_equals_1_traces = matrix(ncol = length(temperatures), nrow = 0),
-  full_block_traces = list(), verbose = FALSE, ...)
+  log_evidence_threshold = -Inf, y_log_lik_t_equals_1_traces = matrix(ncol =
+  length(temperatures), nrow = 0), full_block_traces = list(),
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
@@ -29,9 +29,7 @@ stop_chain(y, blocks_remaining, start_zs, start_logit_omegas, start_log_phis,
 
 \item{simulations}{Integer value of number of simulations to use in estimation of the confidence interval.}
 
-\item{tau0_shape}{Beta shape hyper-priors for prior on rate of case labels.}
-
-\item{BF_threshold}{Numeric value used to determine whether to stop the sampling procedure after successive blocks. If we are confident (to the level of \code{confidence}) that the log Bayes factor between models gamma = 1 and gamma = 0 is under this value, we stop the sampling as soon as possible.}
+\item{log_evidence_threshold}{Numeric value used to determine whether to stop the sampling procedure after successive blocks. If we are confident (to the level of \code{confidence}) that the evidence for model gamma = 1 is under this value, sampling is halted.}
 
 \item{y_log_lik_t_equals_1_traces}{Numeric matrix of log probabilities of \code{y} at different temperatures (columns) in different iterations (rows).}
 
@@ -45,6 +43,6 @@ stop_chain(y, blocks_remaining, start_zs, start_logit_omegas, start_log_phis,
 An object of class \code{BeviMed}.
 }
 \description{
-Sample blocks of a given size until either the estimated log marginal likelihood falls within a given confidence interval, there is sufficient confidence that the log Bayes factor of model gamma = 1 to model gamma = 0 is at most a certain quantity, or a certain number of blocks have been sampled.
+Sample blocks of a given size until either the estimated log marginal likelihood falls within a given confidence interval, there is sufficient confidence that the evidence model gamma = 1 is at most a certain quantity, or a certain number of blocks have been sampled.
 }
 

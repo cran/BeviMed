@@ -1,61 +1,116 @@
-#' Create summary of \code{BeviMed} classed-object
+#' Summarise a \code{BeviMed_m} object
 #'
-#' @param object Object of class \code{BeviMed}.
-#' @param gamma1_prior Prior probability of that gamma = 1.
-#' @template tau0_shape
+#' Create a summary of inference conditional on mode of inheritance. 
+#'
+#' @param object Object of class \code{BeviMed_m}. See function \code{\link{bevimed_m}}.
 #' @template confidence
 #' @template simulations
-#' @param ... Non-used arguments.
-#' @return Object of class \code{BeviMed_summary}.
-#' @method summary BeviMed
+#' @param ... Unused arguments.
+#' @details Returns a \code{BeviMed_m_summary} object, which is a list containing elements:
+#' \itemize{
+#' \item `gamma1_evidence': the log evidence under model gamma = 1,
+#' \item `gamma1_evidence_confidence_interval': a confidence interval for the log evidence under model gamma = 1,
+#' \item `conditional_prob_pathogenic': vector of marginal probabilities of pathogenicity for individual variants,
+#' \item `expected_explained': the expected number of cases with a pathogenic configuration of alleles,
+#' \item `explaining_variants': the expected number of variants present for which cases harbour a rare allele,
+#' \item `number_of_posterior_samples': the number of samples from the posterior distribution of the model parameters which upon which the summary is based,
+#' \item `omega_estimated': logical value indicating whether the parameter omega was estimated,
+#' \item `omega': the posterior mean of omega,
+#' \item `omega_acceptance_rate': if omega was estimated, the rate of acceptance of proposed omega values in the Metropolis-Hastings sampling routine,  
+#' \item `phi_estimated': logical value indicating whether the parameter phi was estimated,
+#' \item `phi': the posterior mean of phi,
+#' \item `phi_acceptance_rate': if phi was estimated, the rate of acceptance of proposed phi values in the Metropolis-Hastings sampling routine, 
+#' \item `N`: number of cases in the analysis,
+#' \item `k`: number of variants in the analysis,
+#' \item `variant_counts': list of counts of each variant for cases and controls,
+#' \item `temperatures': numeric vector of temperatures used as temperatures for tempered MCMC chains 
+#' }
+#' @return Object of class \code{BeviMed_m_summary}.
+#' @method summary BeviMed_m
 #' @export
-summary.BeviMed <- function(object, gamma1_prior=0.01, tau0_shape=object[["tau_shape"]], confidence=0.95, simulations=1000, ...) {
-	vt <- object[["variant_table"]]
-	y <- object[["y"]]
-	variant_counts <- lapply(setNames(nm=c(F,T)), function(y_is) as.integer(table(factor(vt$variant[y[vt$case]==y_is], levels=seq(object[["k"]])))))
+#' @seealso \code{\link{summary.BeviMed}}
+summary.BeviMed_m <- function(object, confidence=0.95, simulations=1000, ...) {
+	vt <- object[["parameters"]][["variant_table"]]
+	y <- object[["parameters"]][["y"]]
+	k <- object[["parameters"]][["k"]]
+	variant_counts <- lapply(setNames(nm=c(F,T)), function(y_is) as.integer(table(factor(vt$variant[y[vt$case]==y_is], levels=seq(length.out=k)))))
 
-	gamma1_evidence <- sum_ML_over_PP(object[["y_log_lik_t_equals_1"]], object[["temperatures"]])
-	gamma0_evidence <- gamma0_evidence(object[["y"]], tau0_shape=tau0_shape)
-	lbf <- gamma1_evidence-gamma0_evidence
-
-	conditional_prob_pathogenic <- apply(object[["z"]][,object[["k"]]*(length(object[["temperatures"]])-1)+seq(object[["k"]]),drop=FALSE], 2, mean)
-	prob_gamma1 <- gamma1_prior * exp(lbf) / (gamma1_prior * exp(lbf) + 1 - gamma1_prior)
+	gamma1_evidence <- extract_gamma1_evidence(object)
+	temps <- object[["parameters"]][["temperatures"]]
+	num_temps <- length(temps)
+	
+	phi_estimated <- object[["parameters"]][["estimate_phi"]]
+	omega_estimated <- object[["parameters"]][["estimate_omega"]]
 
 	structure(list(
-		prob_gamma1=prob_gamma1,
-		conditional_prob_pathogenic=conditional_prob_pathogenic,
-		marginal_prob_pathogenic=prob_gamma1 * conditional_prob_pathogenic,
-		phi=mean(exp(object[["log_phi"]])),
-		omega=mean(1-1/(1+exp(object[["logit_omega"]]))),
-		confidence_interval=CI_gamma1_evidence(
-			temperatures=object[["temperatures"]],
-			y_log_lik_t_equals_1_traces=object[["y_log_lik_t_equals_1"]],
+		gamma1_evidence=gamma1_evidence,
+		gamma1_evidence_confidence_interval=CI_gamma1_evidence(
+			temperatures=temps,
+			y_log_lik_t_equals_1_traces=object[["traces"]][["y_log_lik_t_equals_1"]],
 			confidence=confidence,
 			simulations=simulations
 		),
-		expected_explained=if (prod(dim(object$x)) > 0) extract_expected_explained(object) else NULL,
-		explaining_variants=if (prod(dim(object$z)) > 0) extract_explaining_variants(object) else NULL,
-		log_gamma1_evidence=gamma1_evidence,
-		log_gamma0_evidence=gamma0_evidence,
-		log_BF=lbf,
-		gamma1_prior=gamma1_prior,
-		number_of_posterior_samples=nrow(object[["y_log_lik_t_equals_1"]]),
-		omega_estimated=object[["estimate_omega"]],
-		phi_estimated=object[["estimate_phi"]],
-		phi_acceptance_rate=apply(object[["log_phi"]], 2, function(log_phis) mean(log_phis[-length(log_phis)] != log_phis[-1])), 
-		omega_acceptance_rate=apply(object[["logit_omega"]], 2, function(logit_omegas) mean(logit_omegas[-length(logit_omegas)] != logit_omegas[-1])), 
-		n=length(object[["y"]]),
-		k=object[["k"]],
+		conditional_prob_pathogenic=extract_conditional_prob_pathogenic(object),
+		expected_explained=if (prod(dim(object[["traces"]][["x"]])) > 0) extract_expected_explained(object) else NULL,
+		explaining_variants=if (prod(dim(object[["traces"]][["z"]])) > 0) extract_explaining_variants(object) else NULL,
+		number_of_posterior_samples=nrow(object[["traces"]][["y_log_lik_t_equals_1"]]),
+		omega_estimated=omega_estimated,
+		phi_estimated=phi_estimated,
+		phi=if (phi_estimated) mean(exp(object[["traces"]][["log_phi"]][,num_temps])) else NA,
+		omega=if (omega_estimated) mean(1-1/(1+exp(object[["traces"]][["logit_omega"]][,num_temps]))) else NA,
+		phi_acceptance_rate=if (phi_estimated) apply(object[["traces"]][["log_phi"]], 2, function(log_phis) mean(log_phis[-length(log_phis)] != log_phis[-1])) else NA, 
+		omega_acceptance_rate=if (omega_estimated) apply(object[["traces"]][["logit_omega"]], 2, function(logit_omegas) mean(logit_omegas[-length(logit_omegas)] != logit_omegas[-1])) else NA, 
+		N=length(object[["parameters"]][["y"]]),
+		k=object[["parameters"]][["k"]],
 		variant_counts=variant_counts,
-		temperatures=object[["temperatures"]]
-	), class="BeviMed_summary")
+		temperatures=temps
+	), class="BeviMed_m_summary")
+}
+
+#' Summarise a \code{BeviMed} object
+#'
+#' Create a summary of inference over model gamma = 0 and model gamma = 1 conditional on each mode of inheritance. 
+#'
+#' @param object Object of class \code{BeviMed}.
+#' @param ... Arguments passed to \code{summary.BeviMed_m}.
+#' @details Returns a \code{BeviMed_summary} object, which is a list containing elements:
+#' \itemize{
+#' \item `prob_association`: the probability of association under each mode of inheritance,
+#' \item `prior_prob_association`: the prior probability of association,
+#' \item `prior_prob_dominant`: the prior probability of dominant inheritance, given association,
+#' \item `gamma0_evidence': the log evidence under model gamma = 0,
+#' \item `moi': a list of summaries of mode-of-inheritance conditional inferences, i.e. objects of class \code{BeviMed_m_summary}, on each for dominant and recessive inheritance. The list is also \code{named} "dominant" and "recessive" (see \code{\link{summary.BeviMed_m}} for more details)
+#' }
+#' @return Object of class \code{BeviMed_summary}.
+#' @method summary BeviMed
+#' @seealso \code{\link{summary.BeviMed_m}}
+#' @export
+summary.BeviMed <- function(object, ...) {
+	dominant_prior <- object[["parameters"]][["prior_prob_association"]] * object[["parameters"]][["prior_prob_dominant"]]
+	recessive_prior <- object[["parameters"]][["prior_prob_association"]] - dominant_prior 
+
+	structure(
+		class="BeviMed_summary",
+		c(
+			object[["parameters"]][c(
+				"prior_prob_association",
+				"prior_prob_dominant"
+			)],
+		  	list(
+				gamma0_evidence=gamma0_evidence(y=object[["parameters"]][["y"]], tau0_shape=object[["parameters"]][["tau0_shape"]]),
+				prob_association=extract_prob_association(object, by_MOI=TRUE),
+				moi=lapply(object[["moi"]], summary.BeviMed_m, ...)
+			)
+		)
+	)
 }
 
 #' Print readable summary of \code{BeviMed_summary} object.
 #'
+#' @template print_description
 #' @param x \code{BeviMed_summary} object.
-#' @param print_prob_pathogenic Logical value indicating whether to print list of marginal probabilities of \code{z_j = 1} for all variants \code{j}.
-#' @param ... Not-used arguments 
+#' @param print_prob_pathogenic Logical value indicating whether to print list of marginal probabilities of \code{z_j = 1} for all variants \code{j} under each mode of inheritance.
+#' @param ... Unused arguments 
 #' @return Prints a summary
 #' @method print BeviMed_summary
 #' @export
@@ -63,52 +118,62 @@ print.BeviMed_summary <- function(x, print_prob_pathogenic=TRUE, ...) {
 	stopifnot(class(x) == "BeviMed_summary")
 	dashed <- paste0(rep("-", getOption("width")), collapse="")
 	cat(dashed, "\n")
-	cat("The probability of association is ", round(x[["prob_gamma1"]], digits=2), " [prior: ", round(x[["gamma1_prior"]], digits=2), "]\n", sep="")
-	if (!is.null(x$expected_explained)) cat("\nThe expected number of cases explained is: ", round(x$expected_explained, digits=2), sep="")
-	if (!is.null(x$explaining_variants)) cat("\nThe expected number of variants involved in explained cases is: ", round(x$explaining_variants, digits=2), sep="")
-	cat("\n")
-	cat("\nLog Bayes factor between gamma 1 model and gamma 0 model is ", round(x[["log_BF"]], digits=2), sep="")
-	cat("\nA confidence interval for the log Bayes factor is:\n")
-	print(round(digits=2, x[["confidence_interval"]] - x[["log_gamma0_evidence"]]))
+	cat("Posterior prob. of association: ", round(sum(x[["prob_association"]]), digits=3), " [prior: ", round(x[["prior_prob_association"]], digits=3), "]\n", sep="")
+	cat("Posterior prob. of dominance given association: ", round(x[["prob_association"]]["dominant"]/sum(x[["prob_association"]]), digits=3), " [prior: ", round(x[["prior_prob_dominant"]], digits=3), "]\n", sep="")
 
 	cat(dashed, "\n")
-	if (x[["omega_estimated"]]) {
-		cat("Estimate of omega: ", round(digits=2, x[["omega"]]), "\n", sep="")
-		cat("\tAcceptance rate in sequential chains: \n\t", paste0(collapse=" : ", round(digits=2, x[["omega_acceptance_rate"]])), "\n", sep="")
-		if (x[["phi_estimated"]]) {
-			cat("Estimate of phi: ", round(digits=2, x[["phi"]]), "\n", sep="")
-			cat("\tAcceptance rate in sequential chains: \n\t", paste0(collapse=" : ", round(digits=2, x[["phi_acceptance_rate"]])), "\n", sep="")
-		}
-		cat(dashed, "\n")
-	}
 
-	#only show this for the highest temperature...
+	summary_mat <- rbind(
+		`Expected explained cases`=sapply(x[["moi"]], function(m) { ee <- "expected_explained"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } }),
+		`Expected explaining variants`=sapply(x[["moi"]], function(m) { ee <- "explaining_variants"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } })
+	)
+	print(as.data.frame(round(digits=3, summary_mat[apply(summary_mat, 1, function(r) !any(is.na(r))),,drop=FALSE])))
+
+	cat(dashed, "\n")
 	if (print_prob_pathogenic) {
-		cat("Estimated probabilities of pathogenicity of individual variants\n")
-		cat("(conditional on gamma = 1)\n\n")
+		cat("Estimated probabilities of pathogenicity for individual variants\n\n")
 
+		patho <- lapply(x[["moi"]], "[[", "conditional_prob_pathogenic")
+		patho_names <- lapply(patho, function(vals) sprintf("%.2f", vals))
+		bar_width <- 14
 		print(row.names=FALSE, data.frame(
 			check.names=FALSE,
 			stringsAsFactors=FALSE,
-			Variant=if (is.null(names(x[["conditional_prob_pathogenic"]]))) seq(length(x[["conditional_prob_pathogenic"]])) else names(x[["conditional_prob_pathogenic"]]),
-			Controls=x[["variant_counts"]][["FALSE"]],
-			Cases=x[["variant_counts"]][["TRUE"]],
-			`P(z_j=1|y,gamma=1)`=round(digits=2, x[["conditional_prob_pathogenic"]]),
-			`Bar Chart`=sapply(seq(length(x[["conditional_prob_pathogenic"]])), function(j) paste0("[", paste0(collapse="", rep("=", as.integer(x[["conditional_prob_pathogenic"]][j]*20))), paste0(collapse="", rep(" ", 20-as.integer(x[["conditional_prob_pathogenic"]][j]*20))), "]"))))
+			Var=if (is.null(names(patho$dominant))) seq(length.out=length(patho$dominant)) else names(patho$dominant),
+			Ctrls=x[["moi"]][["dominant"]][["variant_counts"]][["FALSE"]],
+			Cases=x[["moi"]][["dominant"]][["variant_counts"]][["TRUE"]],
+			`Prob. dom pathogenic`=sapply(seq(length.out=length(patho$dominant)), function(j) paste0("[", patho_names$dominant[j], " ", paste0(collapse="", rep("=", as.integer(patho$dominant[j]*bar_width))), paste0(collapse="", rep(" ", bar_width-as.integer(patho$dominant[j]*bar_width))), "]")),
+			`Prob. rec pathogenic`=sapply(seq(length.out=length(patho$recessive)), function(j) paste0("[", patho_names$recessive[j], " ", paste0(collapse="", rep("=", as.integer(patho$recessive[j]*bar_width))), paste0(collapse="", rep(" ", bar_width-as.integer(patho$recessive[j]*bar_width))), "]"))
+		))
 
+		cat(dashed, "\n")
 	}
 }
 
-#' Print readable summary of \code{BeviMed} object.
+#' @title Print readable summary of \code{BeviMed} object
 #'
+#' @template print_description
 #' @param x \code{BeviMed} object.
 #' @param ... Arguments passed to \code{\link{summary.BeviMed}} 
-#' @return Prints a summary
+#' @return Prints a summary.
 #' @method print BeviMed
 #' @export
+#' @seealso \code{\link{summary.BeviMed}}
 print.BeviMed <- function(x, ...) {
 	stopifnot(class(x) == "BeviMed")
-	print.BeviMed_summary(summary(x, ...))
+	print(summary(x, ...))
 }
 
-
+#' @title Print \code{BeviMed_m} object
+#'
+#' @description Print summary statistics for \code{BeviMed_m} object.
+#' @template x_BeviMed_m
+#' @param ... Unused arguments.
+#' @return Prints a summary.
+#' @seealso \code{\link{summary.BeviMed_m}}
+#' @export
+#' @method print BeviMed_m
+print.BeviMed_m <- function(x, ...) {
+	stopifnot(class(x) == "BeviMed_m")
+	print(summary(x, ...))
+}

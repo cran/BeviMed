@@ -588,16 +588,22 @@ List bevimed_mc(
 	}
 
 	return List::create(
-		Named("y_log_lik")=y_log_lik_trace,
-		Named("y_log_lik_t_equals_1")=y_log_lik_t_equals_1_trace,
-		Named("terminal_z")=terminal_z,
-		Named("terminal_log_phi")=terminal_log_phi,
-		Named("terminal_logit_omega")=terminal_logit_omega,
-		Named("z")=z_trace,
-		Named("x")=x_trace,
-		Named("swap_accept")=swap_accept_trace,
-		Named("swap_at_temperature")=swap_temp1_trace,
-		Named("logit_omega")=logit_z_rates_trace,
-		Named("log_phi")=log_phis_trace
+		Named("traces")=List::create(
+			Named("y_log_lik")=y_log_lik_trace,
+			Named("y_log_lik_t_equals_1")=y_log_lik_t_equals_1_trace,
+			Named("z")=z_trace,
+			Named("x")=x_trace,
+			Named("logit_omega")=logit_z_rates_trace,
+			Named("log_phi")=log_phis_trace
+		),
+		Named("swaps")=List::create(
+			Named("accept")=swap_accept_trace,
+			Named("at_temperature")=swap_temp1_trace
+		),
+		Named("final")=List::create(
+			Named("z")=terminal_z,
+			Named("log_phi")=terminal_log_phi,
+			Named("logit_omega")=terminal_logit_omega
+		)
 	);
 }

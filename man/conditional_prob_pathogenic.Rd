@@ -2,23 +2,20 @@
 % Please edit documentation in R/convenience.R
 \name{conditional_prob_pathogenic}
 \alias{conditional_prob_pathogenic}
-\title{Calculate probability of pathogencity for variants in region given an association between case label and the region}
+\title{Calculate probability of pathogencity for variants conditional on mode of inheritance.}
 \usage{
-conditional_prob_pathogenic(y, G, min_ac = 1L, ...)
+conditional_prob_pathogenic(...)
 }
 \arguments{
-\item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
-
-\item{G}{Integer matrix of variant counts per individual, one row per individual and one column per variant.}
-
-\item{min_ac}{Minimum allele count per individual to be considered to have a pathogenic combination of variants. '1' could correspond to a dominant inheritance hypothesis whereas '2' could correspond to a recessive inheritance hypothesis. Can either be an integer value (then used for all samples), or integer vector of \code{length(y)}, useful for example when different samples have different ploidy.}
-
-\item{...}{Other arguments to pass to \code{\link{bevimed}}.}
+\item{...}{Arguments to pass to \code{\link{bevimed_m}}.}
 }
 \value{
 Probabilities of pathogenicity.
 }
 \description{
-Calculate probability of pathogencity for variants in region given an association between case label and the region
+Calls \code{\link{bevimed_m}} and \code{\link{extract_conditional_prob_pathogenic}} to obtain probabilities of pathogenicity.
+}
+\seealso{
+\code{\link{extract_conditional_prob_pathogenic}}, \code{\link{bevimed_m}}
 }
 

@@ -2,14 +2,20 @@
 % Please edit documentation in R/convenience.R
 \name{extract_explaining_variants}
 \alias{extract_explaining_variants}
-\title{Extract expected number of variants involved in cases explained by pathogenic conigurations of alleles from \code{BeviMed} object.}
+\title{Extract expected number of pathogenic variants in cases}
 \usage{
 extract_explaining_variants(x)
 }
 \arguments{
-\item{x}{Object of class \code{BeviMed}.}
+\item{x}{Object of class \code{x_BeviMed_m}. See function \code{\link{bevimed_m}}.}
+}
+\value{
+Numeric value.
 }
 \description{
-Extract expected number of variants involved in cases explained by pathogenic conigurations of alleles from \code{BeviMed} object.
+Extract expected number of variants involved in cases explained by pathogenic conigurations of alleles from \code{BeviMed_m} object.
+}
+\seealso{
+\code{\link{explaining_variants}}, \code{\link{bevimed_m}}
 }
 
