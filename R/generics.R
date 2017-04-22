@@ -42,6 +42,9 @@ summary.BeviMed_m <- function(object, confidence=0.95, simulations=1000, ...) {
 	phi_estimated <- object[["parameters"]][["estimate_phi"]]
 	omega_estimated <- object[["parameters"]][["estimate_omega"]]
 
+	has_z <- dim(object[["traces"]][["z"]])[1] > 0
+	has_x <- dim(object[["traces"]][["x"]])[1] > 0
+
 	structure(list(
 		gamma1_evidence=gamma1_evidence,
 		gamma1_evidence_confidence_interval=CI_gamma1_evidence(
@@ -50,9 +53,9 @@ summary.BeviMed_m <- function(object, confidence=0.95, simulations=1000, ...) {
 			confidence=confidence,
 			simulations=simulations
 		),
-		conditional_prob_pathogenic=extract_conditional_prob_pathogenic(object),
-		expected_explained=if (prod(dim(object[["traces"]][["x"]])) > 0) extract_expected_explained(object) else NULL,
-		explaining_variants=if (prod(dim(object[["traces"]][["z"]])) > 0) extract_explaining_variants(object) else NULL,
+		conditional_prob_pathogenic=if (has_z) setNames(nm=colnames(object[["parameters"]][["G"]]), extract_conditional_prob_pathogenic(object)),
+		expected_explained=if (has_x) extract_expected_explained(object) else NULL,
+		explaining_variants=if (has_z & has_x) extract_explaining_variants(object) else NULL,
 		number_of_posterior_samples=nrow(object[["traces"]][["y_log_lik_t_equals_1"]]),
 		omega_estimated=omega_estimated,
 		phi_estimated=phi_estimated,
@@ -76,30 +79,30 @@ summary.BeviMed_m <- function(object, confidence=0.95, simulations=1000, ...) {
 #' @details Returns a \code{BeviMed_summary} object, which is a list containing elements:
 #' \itemize{
 #' \item `prob_association`: the probability of association under each mode of inheritance,
-#' \item `prior_prob_association`: the prior probability of association,
-#' \item `prior_prob_dominant`: the prior probability of dominant inheritance, given association,
+#' \item `prior_prob_association`: the prior probability of association for each association model,
 #' \item `gamma0_evidence': the log evidence under model gamma = 0,
-#' \item `moi': a list of summaries of mode-of-inheritance conditional inferences, i.e. objects of class \code{BeviMed_m_summary}, on each for dominant and recessive inheritance. The list is also \code{named} "dominant" and "recessive" (see \code{\link{summary.BeviMed_m}} for more details)
+#' \item `models': a list of summaries of model conditional inferences, i.e. objects of class \code{BeviMed_m_summary}. See \code{\link{summary.BeviMed_m}} for more details.
 #' }
 #' @return Object of class \code{BeviMed_summary}.
 #' @method summary BeviMed
 #' @seealso \code{\link{summary.BeviMed_m}}
 #' @export
 summary.BeviMed <- function(object, ...) {
-	dominant_prior <- object[["parameters"]][["prior_prob_association"]] * object[["parameters"]][["prior_prob_dominant"]]
-	recessive_prior <- object[["parameters"]][["prior_prob_association"]] - dominant_prior 
-
 	structure(
 		class="BeviMed_summary",
 		c(
 			object[["parameters"]][c(
 				"prior_prob_association",
-				"prior_prob_dominant"
+				"variant_sets",
+				"moi"
 			)],
 		  	list(
 				gamma0_evidence=gamma0_evidence(y=object[["parameters"]][["y"]], tau0_shape=object[["parameters"]][["tau0_shape"]]),
-				prob_association=extract_prob_association(object, by_MOI=TRUE),
-				moi=lapply(object[["moi"]], summary.BeviMed_m, ...)
+				prob_association=extract_prob_association(object, by_model=TRUE),
+				models=lapply(object[["models"]], summary.BeviMed_m, ...),
+				N=length(object[["parameters"]][["y"]]),
+				k=ncol(object[["parameters"]][["G"]]),
+				variant_names=colnames(object[["parameters"]][["G"]])
 			)
 		)
 	)
@@ -118,32 +121,34 @@ print.BeviMed_summary <- function(x, print_prob_pathogenic=TRUE, ...) {
 	stopifnot(class(x) == "BeviMed_summary")
 	dashed <- paste0(rep("-", getOption("width")), collapse="")
 	cat(dashed, "\n")
-	cat("Posterior prob. of association: ", round(sum(x[["prob_association"]]), digits=3), " [prior: ", round(x[["prior_prob_association"]], digits=3), "]\n", sep="")
-	cat("Posterior prob. of dominance given association: ", round(x[["prob_association"]]["dominant"]/sum(x[["prob_association"]]), digits=3), " [prior: ", round(x[["prior_prob_dominant"]], digits=3), "]\n", sep="")
+	cat("Posterior probability of association: ", round(sum(x[["prob_association"]]), digits=3), " [prior: ", round(sum(x[["prior_prob_association"]]), digits=3), "]\n", sep="")
+	cat("Posterior probability of dominance given association: ", round(sum(x[["prob_association"]][x[["moi"]]=="dominant"])/sum(x[["prob_association"]]), digits=3), " [prior: ", round(sum(x[["prior_prob_association"]][x[["moi"]]=="dominant"])/sum(x[["prior_prob_association"]]), digits=3), "]\n", sep="")
+	cat("Posterior probability of each association model given association: \n")
+	cat(paste0(collapse="", "    ", if (!is.null(names(x[["prob_association"]]))) names(x[["prob_association"]]) else seq(length.out=length(x[["prob_association"]])), ": ", round(x[["prob_association"]]/sum(x[["prob_association"]]), digits=3), " [prior: ", round(x[["prior_prob_association"]]/sum(x[["prior_prob_association"]]), digits=3), "]\n"), sep="")
 
 	cat(dashed, "\n")
 
-	summary_mat <- rbind(
-		`Expected explained cases`=sapply(x[["moi"]], function(m) { ee <- "expected_explained"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } }),
-		`Expected explaining variants`=sapply(x[["moi"]], function(m) { ee <- "explaining_variants"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } })
+	summary_mat <- cbind(
+		`Explained cases`=sapply(x[["models"]], function(m) { ee <- "expected_explained"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } }),
+		`Explaining variants`=sapply(x[["models"]], function(m) { ee <- "explaining_variants"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } })
 	)
 	print(as.data.frame(round(digits=3, summary_mat[apply(summary_mat, 1, function(r) !any(is.na(r))),,drop=FALSE])))
 
 	cat(dashed, "\n")
 	if (print_prob_pathogenic) {
-		cat("Estimated probabilities of pathogenicity for individual variants\n\n")
+		cat("Probabilities of pathogenicity for individual variants\n\n")
 
-		patho <- lapply(x[["moi"]], "[[", "conditional_prob_pathogenic")
-		patho_names <- lapply(patho, function(vals) sprintf("%.2f", vals))
-		bar_width <- 14
+		patho <- variant_marginals(Map(f="*", lapply(x[["models"]], "[[", "conditional_prob_pathogenic"), x[["prob_association"]]), x[["variant_sets"]], x[["k"]])/sum(x[["prob_association"]])
+		patho_names <- if (!is.null(x[["variant_names"]])) x[["variant_names"]] else seq_along(patho)
+
+		patho_rounded <- lapply(patho, function(vals) sprintf("%.2f", vals))
+
+		bar_width <- 17
 		print(row.names=FALSE, data.frame(
 			check.names=FALSE,
 			stringsAsFactors=FALSE,
-			Var=if (is.null(names(patho$dominant))) seq(length.out=length(patho$dominant)) else names(patho$dominant),
-			Ctrls=x[["moi"]][["dominant"]][["variant_counts"]][["FALSE"]],
-			Cases=x[["moi"]][["dominant"]][["variant_counts"]][["TRUE"]],
-			`Prob. dom pathogenic`=sapply(seq(length.out=length(patho$dominant)), function(j) paste0("[", patho_names$dominant[j], " ", paste0(collapse="", rep("=", as.integer(patho$dominant[j]*bar_width))), paste0(collapse="", rep(" ", bar_width-as.integer(patho$dominant[j]*bar_width))), "]")),
-			`Prob. rec pathogenic`=sapply(seq(length.out=length(patho$recessive)), function(j) paste0("[", patho_names$recessive[j], " ", paste0(collapse="", rep("=", as.integer(patho$recessive[j]*bar_width))), paste0(collapse="", rep(" ", bar_width-as.integer(patho$recessive[j]*bar_width))), "]"))
+			Var=substr(patho_names, 1, 22),
+			`Probability pathogenic`=sapply(seq(length.out=length(patho)), function(j) paste0("[", patho_rounded[j], " ", paste0(collapse="", rep("=", as.integer(round(patho[j]*bar_width, digits=0L)))), paste0(collapse="", rep(" ", bar_width-as.integer(round(patho[j]*bar_width, digits=0L)))), "]"))
 		))
 
 		cat(dashed, "\n")

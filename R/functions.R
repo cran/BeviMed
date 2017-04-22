@@ -26,9 +26,9 @@
 #' @param chain_swaps_per_cycle Number of chain swaps to propose per update cycle.
 #' @param annealing Logical value determining whether to anneal the chains, e.g. for optimisation.
 #' @template tandem_variant_updates
-#' @param case_variant_block_starts 0-indexed start positions for contiguous blocks of variants in \code{case_variants}.
-#' @param case_variant_block_ends As \code{case_variant_block_starts} for (exclusive) stop positions.
-#' @param case_variants Integer vector giving variant numbers (0-based, i.e. between 0 and k-1). Used to pick pairs of variants for tandem updates from.
+#' @param comphet_variant_block_starts 0-indexed start positions for contiguous blocks of variants in \code{comphet_variants}.
+#' @param comphet_variant_block_ends As \code{comphet_variant_block_starts} for (exclusive) stop positions.
+#' @param comphet_variants Integer vector giving variant numbers (0-based, i.e. between 0 and k-1). Used to pick pairs of variants for tandem updates from.
 #' @template return_z_trace
 #' @template return_x_trace
 #' @template burn
@@ -61,9 +61,9 @@ call_cpp <- function(
 	chain_swaps_per_cycle,
 	annealing,
 	tandem_variant_updates,
-	case_variant_block_starts,
-	case_variant_block_ends,
-	case_variants,
+	comphet_variant_block_starts,
+	comphet_variant_block_ends,
+	comphet_variants,
 	return_z_trace,
 	return_x_trace,
 	burn=0,
@@ -84,7 +84,7 @@ call_cpp <- function(
 		stopifnot(length(block_ends) == length(block_starts))
 		stopifnot(block_ends[length(block_ends)] == length(cases))
 		stopifnot(length(cases) == length(counts))
-		if (tandem_variant_updates > 0 & length(unique(case_variants)) < 2) stop("Must have more than 1 variant to select from if making tandem updates")
+		if (tandem_variant_updates > 0 & length(unique(comphet_variants)) < 2) stop("Must have more than 1 variant to select from if making tandem updates")
 	}
 
 	raw <- bevimed_mc(
@@ -115,9 +115,9 @@ call_cpp <- function(
 		chain_swaps_per_cycle,
 		annealing,
 		tandem_variant_updates,
-		case_variant_block_starts,
-		case_variant_block_ends,
-		case_variants,
+		comphet_variant_block_starts,
+		comphet_variant_block_ends,
+		comphet_variants,
 		return_z_trace,
 		return_x_trace
 	)
@@ -368,8 +368,8 @@ get_G_args <- function(G) {
 	variants <- rep(seq(length.out=ncol(G)), each=nrow(G))
 	cases <- rep(seq(length.out=nrow(G)), times=ncol(G))
 
-	block_ends <- cumsum(lapply(split(counts, variants), function(cnts) sum(cnts > 0)))
-	block_starts <- c(0, block_ends[-length(block_ends)])
+	block_ends <- unname(cumsum(lapply(split(counts, factor(variants, levels=seq(length.out=ncol(G)))), function(cnts) sum(cnts > 0))))
+	block_starts <- if (length(block_ends) > 0) c(0, block_ends[-length(block_ends)]) else integer(0)
 	list(
 		cases=cases[counts > 0],
 		counts=counts[counts > 0],
@@ -479,11 +479,11 @@ bevimed_m <- function(
 		
 	G_args <- get_G_args(G)
 
-	y1_cases_with_more_than_1_variant <- apply(G > 0, 1, sum) > 1
-	y1_variants <- lapply(split(t(G[y1_cases_with_more_than_1_variant,,drop=FALSE] > 0), seq(length.out=sum(y1_cases_with_more_than_1_variant))), which)
-	y1_block_ends <- cumsum(lapply(y1_variants, length))
-	y1_block_starts <- c(0, y1_block_ends[-length(y1_block_ends)])
-	adjusted_tvu <- if (sum(y1_cases_with_more_than_1_variant) > 0) tandem_variant_updates else 0
+	comphet_cases <- apply(G > 0, 1, sum) > 1
+	comphet_variants <- lapply(split(G[comphet_cases,,drop=FALSE] > 0, seq(length.out=sum(comphet_cases))), which)
+	comphet_block_ends <- unname(cumsum(lapply(comphet_variants, length)))
+	comphet_block_starts <- if (length(comphet_block_ends) > 0) c(0, comphet_block_ends[-length(comphet_block_ends)]) else integer(0)
+	adjusted_tvu <- if (sum(comphet_cases) > 0) tandem_variant_updates else 0
 
 	initial_log_phi_proposal_sd <- 0.5
 	initial_logit_omega_proposal_sd <- 1
@@ -506,9 +506,9 @@ bevimed_m <- function(
 		log_phi_sd=log_phi_sd,
 		chain_swaps_per_cycle=swaps,
 		tandem_variant_updates=adjusted_tvu,
-		case_variant_block_starts=y1_block_starts,
-		case_variant_block_ends=y1_block_ends,
-		case_variants=unlist(y1_variants)-1
+		comphet_variant_block_starts=comphet_block_starts,
+		comphet_variant_block_ends=comphet_block_ends,
+		comphet_variants=unlist(use.names=FALSE, comphet_variants)-1
 	)
 
 	if (tune_temps > 0) {
@@ -655,6 +655,7 @@ bevimed_m <- function(
 					y=y,
 					min_ac=min_ac,
 					variant_table=to_var_tab(G_args),
+					G=G,
 					N=length(y),
 					k=ncol(G)
 				))

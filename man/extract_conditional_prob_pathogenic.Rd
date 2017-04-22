@@ -2,7 +2,7 @@
 % Please edit documentation in R/convenience.R
 \name{extract_conditional_prob_pathogenic}
 \alias{extract_conditional_prob_pathogenic}
-\title{Extract probability of pathogenicity for variant conditional on a given mode of inheritance}
+\title{Extract probability of pathogenicity for variant conditional on a given association model}
 \usage{
 extract_conditional_prob_pathogenic(x)
 }

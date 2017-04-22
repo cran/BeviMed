@@ -4,10 +4,10 @@
 \alias{prob_association}
 \title{Calculate probability of association}
 \usage{
-prob_association(by_MOI = FALSE, ...)
+prob_association(by_model = FALSE, ...)
 }
 \arguments{
-\item{by_MOI}{Logical value determining whether to return probabilities broken down by mode of inheritance.}
+\item{by_model}{Logical value determining whether to return probabilities broken down by mode of inheritance.}
 
 \item{...}{Arguments to pass to \code{\link{bevimed}}.}
 }
@@ -15,7 +15,7 @@ prob_association(by_MOI = FALSE, ...)
 Probability of association.
 }
 \description{
-Calculate probability of an association between case/control label and allele configuration, optionally broken down by mode of inheritance.
+Calculate probability of an association between case/control label and allele configuration, optionally broken down by mode of inheritance/model.
 }
 \seealso{
 \code{\link{bevimed}}, \code{\link{extract_prob_association}}

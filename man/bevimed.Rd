@@ -5,8 +5,8 @@
 \title{Bayesian Evaluation of Variant Involvement in Mendelian Disease}
 \usage{
 bevimed(y, G, ploidy = rep(2L, length(y)), prior_prob_association = 0.01,
-  prior_prob_dominant = 0.5, tau0_shape = c(1, 1), dominant_args = NULL,
-  recessive_args = NULL, ...)
+  prior_prob_dominant = 0.5, dominant_args = NULL, recessive_args = NULL,
+  ...)
 }
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
@@ -18,8 +18,6 @@ bevimed(y, G, ploidy = rep(2L, length(y)), prior_prob_association = 0.01,
 \item{prior_prob_association}{The prior probability of association.}
 
 \item{prior_prob_dominant}{The prior probability of dominant inheritance given that there is an association.}
-
-\item{tau0_shape}{Beta shape hyper-priors for prior on rate of case labels.}
 
 \item{dominant_args}{Arguments to pass to \code{\link{bevimed_m}} conditioning on dominant inheritance.}
 
@@ -34,6 +32,6 @@ bevimed(y, G, ploidy = rep(2L, length(y)), prior_prob_association = 0.01,
 Infer probabilities of association between disease label and locus and posterior parameter values under BeviMed model.
 }
 \seealso{
-\code{\link{prob_association}}, \code{\link{bevimed_m}}, \code{\link{summary.BeviMed}}
+\code{\link{prob_association}}, \code{\link{bevimed_m}}, \code{\link{summary.BeviMed}}, \code{\link{bevimed_polytomous}}
 }
 

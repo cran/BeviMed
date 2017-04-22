@@ -4,15 +4,15 @@
 \alias{prob_pathogenic}
 \title{Calculate variant marginal probabilities of pathogencity}
 \usage{
-prob_pathogenic(by_MOI = FALSE, ...)
+prob_pathogenic(by_model = FALSE, ...)
 }
 \arguments{
-\item{by_MOI}{Logical value determining whether to return probabilities broken down by mode of inheritance.}
+\item{by_model}{Logical value determining whether to return probabilities broken down by mode of inheritance.}
 
 \item{...}{Arguments to pass to \code{\link{bevimed}}.}
 }
 \value{
-If \code{by_MOI} is \code{FALSE}, a vector of probabilities of pathogenicity for each variant, otherwise a matrix of probabilities of pathogenicity conditional on mode of inheritance, with a column for each variant and two rows corresponding to each mode of inheritance.
+If \code{by_model} is \code{FALSE}, a vector of probabilities of pathogenicity for each variant, otherwise a list of vectors of probabilities of pathogenicity conditional on each compared association model.
 }
 \description{
 Calls \code{\link{bevimed}} and \code{\link{extract_prob_pathogenic}} to obtain marginal probabilities of pathogenicity.

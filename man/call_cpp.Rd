@@ -9,7 +9,7 @@ call_cpp(samples_per_chain, y, block_starts, block_ends, cases, counts, min_ac,
   logit_omegas, logit_omega_proposal_sds, variant_weights, estimate_phi,
   log_phis, log_phi_mean, log_phi_sd, log_phi_proposal_sds,
   chain_swaps_per_cycle, annealing, tandem_variant_updates,
-  case_variant_block_starts, case_variant_block_ends, case_variants,
+  comphet_variant_block_starts, comphet_variant_block_ends, comphet_variants,
   return_z_trace, return_x_trace, burn = 0, check = TRUE)
 }
 \arguments{
@@ -61,11 +61,11 @@ call_cpp(samples_per_chain, y, block_starts, block_ends, cases, counts, min_ac,
 
 \item{tandem_variant_updates}{Number of tandem variant updates to make per update cycle.}
 
-\item{case_variant_block_starts}{0-indexed start positions for contiguous blocks of variants in \code{case_variants}.}
+\item{comphet_variant_block_starts}{0-indexed start positions for contiguous blocks of variants in \code{comphet_variants}.}
 
-\item{case_variant_block_ends}{As \code{case_variant_block_starts} for (exclusive) stop positions.}
+\item{comphet_variant_block_ends}{As \code{comphet_variant_block_starts} for (exclusive) stop positions.}
 
-\item{case_variants}{Integer vector giving variant numbers (0-based, i.e. between 0 and k-1). Used to pick pairs of variants for tandem updates from.}
+\item{comphet_variants}{Integer vector giving variant numbers (0-based, i.e. between 0 and k-1). Used to pick pairs of variants for tandem updates from.}
 
 \item{return_z_trace}{Logical value determining whether to store the z-vectors for each chain, which uses alot of memory, particularly if \code{samples_per_chain}, k and \code{length(temperatures)} are large.}
 

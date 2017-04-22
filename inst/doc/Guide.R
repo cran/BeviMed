@@ -41,15 +41,8 @@ obj <- bevimed(y=y, G=G)
 ## ----print, echo=TRUE----------------------------------------------------
 obj
 
-## ----extract_prob_association, echo=TRUE---------------------------------
-extract_prob_association(obj)
-extract_prob_association(obj, by_MOI=TRUE)
-
-## ----extract_conditional_prob_pathogenic, echo=TRUE----------------------
-extract_conditional_prob_pathogenic(obj$moi$dominant)
-
-## ----prob_association, echo=TRUE-----------------------------------------
-prob_association(y=y, G=G)
+## ----polytomous, echo=TRUE-----------------------------------------------
+bevimed_polytomous(y=G[,1] > 0, G=G, variant_sets=list(`first`=1, `all`=1:ncol(G)))
 
 ## ----multiple, eval=FALSE, echo=TRUE-------------------------------------
 #  source(paste0(system.file(package="BeviMed", "/scripts/vcf.R")))

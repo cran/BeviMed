@@ -21,10 +21,9 @@ Create a summary of inference over model gamma = 0 and model gamma = 1 condition
 Returns a \code{BeviMed_summary} object, which is a list containing elements:
 \itemize{
 \item `prob_association`: the probability of association under each mode of inheritance,
-\item `prior_prob_association`: the prior probability of association,
-\item `prior_prob_dominant`: the prior probability of dominant inheritance, given association,
+\item `prior_prob_association`: the prior probability of association for each association model,
 \item `gamma0_evidence': the log evidence under model gamma = 0,
-\item `moi': a list of summaries of mode-of-inheritance conditional inferences, i.e. objects of class \code{BeviMed_m_summary}, on each for dominant and recessive inheritance. The list is also \code{named} "dominant" and "recessive" (see \code{\link{summary.BeviMed_m}} for more details)
+\item `models': a list of summaries of model conditional inferences, i.e. objects of class \code{BeviMed_m_summary}. See \code{\link{summary.BeviMed_m}} for more details.
 }
 }
 \seealso{

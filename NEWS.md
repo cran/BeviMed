@@ -1,3 +1,19 @@
+# BeviMed 5.0
+
+* `bevimed_polytomous` function added which enables application of BeviMed across multiple association models. 
+* `BeviMed` objects now more general, representing results of inference with respect to the baseline model `gamma = 0` and an arbitrary number of alternative association models - typically, one for each mode of inheritance. The `$moi` slot has been replaced with `$models`.
+* `prob_pathogenic` now returns a list when broken down by mode of inheritance/model.
+
+# BeviMed 4.3
+
+* Make BeviMed work smoothly when number of individuals or number of variants is 0.
+* Retain names of variants from columns of original allele count matrix.
+* Improvements to guide, with more detail on model selection.
+
+# BeviMed 4.2
+
+* Fixed bug in calculation of expected number of explaining variants by only including those with pathogenic configurations.
+
 # BeviMed 4.0
 
 * Previous `bevimed` function now replaced by `bevimed_m`, with the `_m` indicating that it conditions on mode of inheritance. 

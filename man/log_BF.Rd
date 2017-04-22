@@ -2,7 +2,7 @@
 % Please edit documentation in R/convenience.R
 \name{log_BF}
 \alias{log_BF}
-\title{Calculate log Bayes factor between model gamma = 1 conditional on a given mode of inheritance and model gamma = 0}
+\title{Calculate log Bayes factor between an association model with a given mode of inheritance and model gamma = 0}
 \usage{
 log_BF(y, tau0_shape = c(1, 1), ...)
 }
@@ -17,7 +17,7 @@ log_BF(y, tau0_shape = c(1, 1), ...)
 Log Bayes factor.
 }
 \description{
-Compute log Bayes factor of model gamma = 1 against model gamma = 0 for just one mode of inheritance.
+Compute log Bayes factor of an association model and model gamma = 0.
 }
 \seealso{
 \code{\link{bevimed_m}}, \code{\link{prob_association_m}}

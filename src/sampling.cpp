@@ -28,9 +28,9 @@ List bevimed_mc(
 	int swaps,
 	bool annealing,
 	int tandem_variant_updates,
-	IntegerVector y1_case_block_start_index,
-	IntegerVector y1_case_block_stop_index,
-	IntegerVector y1_variants,
+	IntegerVector tandem_case_block_start_index,
+	IntegerVector tandem_case_block_stop_index,
+	IntegerVector tandem_variants,
 	bool return_z_trace,
 	bool return_x_trace
 ) {
@@ -235,15 +235,17 @@ List bevimed_mc(
 		if (tandem_variant_updates > 0) {
 			for (int chain_number = 0; chain_number < num_temps; chain_number++) {
 				for (int double_variant_update_number = 0; double_variant_update_number < tandem_variant_updates; double_variant_update_number ++) {
-					
 
-
-					int v1 = y1_variants[random_integer(y1_variants.length())];
-					int v2;
-					do {
-						v2 = y1_variants[random_integer(y1_variants.length())];
-					} while (v1 == v2);
-
+					int select_case = random_integer(tandem_case_block_start_index.length());
+					int num_vars_in_case = tandem_case_block_stop_index[select_case]-tandem_case_block_start_index[select_case];
+					int v1p = random_integer(num_vars_in_case);
+					int v2p = random_integer(num_vars_in_case-1) + 1;
+					if (v1p >= v2p) {
+						v1p = num_vars_in_case - v1p - 1;
+						v2p = num_vars_in_case - v2p;
+					}
+					int v1 = tandem_variants[tandem_case_block_start_index[select_case] + v1p];
+					int v2 = tandem_variants[tandem_case_block_start_index[select_case] + v2p];
 
 					int no_change_s01 = count_y1[chain_number] - count_y1x1[chain_number];
 					int no_change_s00 = (n - count_x1[chain_number]) - (count_y1[chain_number] - count_y1x1[chain_number]);

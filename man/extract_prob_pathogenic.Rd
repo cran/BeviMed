@@ -4,18 +4,18 @@
 \alias{extract_prob_pathogenic}
 \title{Extract variant marginal probabilities of pathogenicity}
 \usage{
-extract_prob_pathogenic(x, by_MOI = TRUE)
+extract_prob_pathogenic(x, by_model = TRUE)
 }
 \arguments{
 \item{x}{Object of class \code{BeviMed}.}
 
-\item{by_MOI}{Logical value determining whether to return probabilities broken down by mode of inheritance.}
+\item{by_model}{Logical value determining whether to return probabilities broken down by mode of inheritance.}
 }
 \value{
-A vector of probabilities of pathogenicity for individual variants, or if \code{by_MOI} is \code{TRUE}, then a matrix of probabilities, with rows corresponding to modes of inheritance and columns to variants.
+A vector of probabilities of pathogenicity for individual variants, or if \code{by_model} is \code{TRUE}, then a matrix of probabilities, with rows corresponding to modes of inheritance and columns to variants.
 }
 \description{
-Extract the marginal probability of pathogenicity for individual variants from \code{BeviMed} object, optionally broken down by mode of inheritance.
+Extract the marginal probability of pathogenicity for individual variants from \code{BeviMed} object, optionally broken down by mode of inheritance/model.
 }
 \seealso{
 \code{\link{prob_pathogenic}}, \code{\link{bevimed}}

@@ -7,20 +7,18 @@
 #' @template ploidy
 #' @template prior_prob_association
 #' @template prior_prob_dominant
-#' @template tau0_shape
 #' @param dominant_args Arguments to pass to \code{\link{bevimed_m}} conditioning on dominant inheritance.
 #' @param recessive_args Arguments to pass to \code{\link{bevimed_m}} conditioning on recessive inheritance.
 #' @param ... Arguments to be passed to \code{\link{bevimed_m}} for both modes of inheritance.
 #' @return \code{BeviMed} object containing results of inference.
 #' @export
-#' @seealso \code{\link{prob_association}}, \code{\link{bevimed_m}}, \code{\link{summary.BeviMed}}
+#' @seealso \code{\link{prob_association}}, \code{\link{bevimed_m}}, \code{\link{summary.BeviMed}}, \code{\link{bevimed_polytomous}}
 bevimed <- function(
 	y,
 	G,
 	ploidy=rep(2L, length(y)),
 	prior_prob_association=0.01,
 	prior_prob_dominant=0.5,
-	tau0_shape=c(1, 1),
 	dominant_args=NULL,	
 	recessive_args=NULL,
 	...
@@ -30,29 +28,17 @@ bevimed <- function(
 	if (prior_prob_dominant > 1 | prior_prob_dominant < 0)
 		stop("'prior_prob_dominant' must be between 0 and 1")
 
-	dominant_prior <- prior_prob_association * prior_prob_dominant
-	recessive_prior <- prior_prob_association * (1-prior_prob_dominant)
-	shared <- list(...)
+	priors <- prior_prob_association * c(dominant=prior_prob_dominant, recessive=1-prior_prob_dominant)
 
-	G_args <- get_G_args(G)
-
-	structure(
-		class="BeviMed",
-		list(
-			parameters=list(
-				tau0_shape=tau0_shape,
-				prior_prob_association=prior_prob_association,
-				prior_prob_dominant=prior_prob_dominant,
-				ploidy=ploidy,
-				y=y,
-				variant_table=to_var_tab(G_args)
-			),
-			moi=Map(
-				f=function(min_ac, args) do.call(what=bevimed_m, c(list(y=y, G=G, min_ac=min_ac), args, shared)),
-				list(dominant=1L, recessive=ploidy),
-				list(dominant_args, recessive_args)
-			)
-		)
+	bevimed_polytomous(
+		y=y,
+		G=G,
+		ploidy=ploidy,
+		prior_prob_association=priors,
+		variant_sets=list(dominant=seq(length.out=ncol(G)), recessive=seq(length.out=ncol(G))),
+		moi=c("dominant","recessive"),
+		model_specific_args=list(dominant=dominant_args, recessive=recessive_args),
+		...
 	)
 }
 
@@ -114,7 +100,7 @@ gamma1_evidence <- function(
 #' @seealso \code{\link{expected_explained}}, \code{\link{bevimed_m}}
 extract_expected_explained <- function(x) {
 	stopifnot(class(x) == "BeviMed_m")
-	if (("x" %in% names(x[["traces"]]))*prod(dim(x[["traces"]][["x"]])) == 0)
+	if (("x" %in% names(x[["traces"]]))*dim(x[["traces"]][["x"]])[1] == 0)
 		stop("Must make sure to set 'return_x_trace=TRUE' in call to 'bevimed_m' to use this function")
 	mean(apply(x$traces$x[,x$parameters$y,drop=FALSE], 1, sum))
 }
@@ -144,9 +130,17 @@ expected_explained <- function(...) {
 #' @seealso \code{\link{explaining_variants}}, \code{\link{bevimed_m}}
 extract_explaining_variants <- function(x) {
 	stopifnot(class(x) == "BeviMed_m")
-	if (("z" %in% names(x[["traces"]]))*prod(dim(x[["traces"]][["z"]])) == 0)
-		stop("Must make sure to set 'return_z_trace=TRUE' in call to 'bevimed_m' to use this function")
-	mean(apply(x$traces$z[,x$parameters$k * (length(x$parameters$temperatures)-1) + unique(x$parameters$variant_table$variant[x$parameters$variant_table$case %in% which(x$parameters$y)]),drop=FALSE], 1, sum))
+	if (("z" %in% names(x[["traces"]]))*dim(x[["traces"]][["z"]])[1] == 0)
+		stop("Must make sure to set 'return_z_trace=TRUE' and 'return_x_trace=TRUE' in call to 'bevimed_m' to use this function")
+
+	logicalG <- x$parameters$G > 0
+	y <- x$parameters$y
+	mean(mapply(
+		SIMPLIFY=TRUE,
+		FUN=function(z, x) sum(apply(logicalG[y & x, z, drop=FALSE], 2, any)),
+		split(x$traces$z[,seq(to=ncol(x$traces$z), length.out=x$parameters$k),drop=FALSE], seq(length.out=nrow(x$traces$z))),
+		split(x$traces$x, seq(length.out=nrow(x$traces$z)))
+	))
 }
 
 #' Calculate expected number of pathogenic variants in cases
@@ -158,12 +152,12 @@ extract_explaining_variants <- function(x) {
 #' @export
 #' @seealso \code{\link{extract_explaining_variants}}, \code{\link{bevimed_m}}
 explaining_variants <- function(...) {
-	extract_explaining_variants(bevimed_m(return_z_trace=TRUE, return_x_trace=FALSE, ...))
+	extract_explaining_variants(bevimed_m(return_z_trace=TRUE, return_x_trace=TRUE, ...))
 }
 
-#' Calculate log Bayes factor between model gamma = 1 conditional on a given mode of inheritance and model gamma = 0
+#' Calculate log Bayes factor between an association model with a given mode of inheritance and model gamma = 0
 #' 
-#' @description Compute log Bayes factor of model gamma = 1 against model gamma = 0 for just one mode of inheritance. 
+#' @description Compute log Bayes factor of an association model and model gamma = 0. 
 #'
 #' @template y
 #' @template dots_to_bevimed_m
@@ -207,80 +201,95 @@ prob_association_m <- function(
 
 #' @title Extract the posterior probability of association
 #'
-#' @description Get posterior probability of association as numeric value, or optionally as numeric vector of length two with probabilities broken down by mode of inheritance (by passing \code{by_MOI=TRUE}), from a \code{BeviMed} object.
+#' @description Get posterior probability of association as numeric value, or optionally as numeric vector of length two with probabilities broken down by mode of inheritance (by passing \code{by_model=TRUE}), from a \code{BeviMed} object.
 #' @template x_BeviMed
-#' @template by_MOI
+#' @template by_model
 #' @return Probability values.
 #' @export
 #' @seealso \code{\link{prob_association}}, \code{\link{bevimed}}
-extract_prob_association <- function(x, by_MOI=FALSE) {
+extract_prob_association <- function(x, by_model=FALSE) {
 	stopifnot(class(x) == "BeviMed")
-	dominant_prior <- x[["parameters"]][["prior_prob_association"]] * x[["parameters"]][["prior_prob_dominant"]]
-	recessive_prior <- x[["parameters"]][["prior_prob_association"]] - dominant_prior 
-
-	dom_ev <- extract_gamma1_evidence(x[["moi"]][["dominant"]])
-	rec_ev <- extract_gamma1_evidence(x[["moi"]][["recessive"]])
+	priors_by_model <- x[["parameters"]][["prior_prob_association"]]
+	evidence_by_model <- sapply(x[["models"]], extract_gamma1_evidence)
 	g0_ev <- gamma0_evidence(y=x[["parameters"]][["y"]], tau0_shape=x[["parameters"]][["tau0_shape"]])
 
-	modal_model <- max(c(dom_ev, rec_ev, g0_ev))
-	num_dom <- dominant_prior * exp(dom_ev-modal_model)
-	num_rec <- recessive_prior * exp(rec_ev-modal_model)
-	num_g0 <- (1-dominant_prior-recessive_prior) * exp(g0_ev-modal_model)
-	denom <- num_dom + num_rec + num_g0
+	modal_model_ev <- max(c(evidence_by_model, g0_ev))
+	numerator <- priors_by_model * exp(evidence_by_model-modal_model_ev)
+	numerator_g0 <- (1-sum(priors_by_model)) * exp(g0_ev-modal_model_ev)
+	denom <- sum(c(numerator, numerator_g0))
 
-	moi_probs <- c(dominant=num_dom/denom, recessive=num_rec/denom)
-	if (by_MOI) moi_probs
-	else sum(moi_probs)
+	probs_by_model <- numerator/denom
+	if (by_model) probs_by_model 
+	else sum(probs_by_model)
 }
 
 #' @title Calculate probability of association
 #'
-#' @description Calculate probability of an association between case/control label and allele configuration, optionally broken down by mode of inheritance.
-#' @template by_MOI
+#' @description Calculate probability of an association between case/control label and allele configuration, optionally broken down by mode of inheritance/model.
+#' @template by_model
 #' @param ... Arguments to pass to \code{\link{bevimed}}. 
 #' @return Probability of association.
 #' @export
 #' @seealso \code{\link{bevimed}}, \code{\link{extract_prob_association}}
 prob_association <- function(
-	by_MOI=FALSE,
+	by_model=FALSE,
 	...
 ) {
 	bv <- bevimed(..., return_z_trace=FALSE, return_x_trace=FALSE)
-	extract_prob_association(bv, by_MOI=by_MOI)
+	extract_prob_association(bv, by_model=by_model)
+}
+
+variant_marginals <- function(var_probs_by_model, variant_sets, k) {
+	apply(mapply(
+		SIMPLIFY=TRUE,
+		FUN=function(probs, inds) {
+			p <- rep(0, k)
+			p[inds] <- probs
+			p
+		},
+		var_probs_by_model,
+		variant_sets
+	), 1, sum)
 }
 
 #' @title Extract variant marginal probabilities of pathogenicity
 #'
-#' @description Extract the marginal probability of pathogenicity for individual variants from \code{BeviMed} object, optionally broken down by mode of inheritance.
+#' @description Extract the marginal probability of pathogenicity for individual variants from \code{BeviMed} object, optionally broken down by mode of inheritance/model.
 #'
 #' @template x_BeviMed
-#' @template by_MOI
-#' @return A vector of probabilities of pathogenicity for individual variants, or if \code{by_MOI} is \code{TRUE}, then a matrix of probabilities, with rows corresponding to modes of inheritance and columns to variants.
+#' @template by_model
+#' @return A vector of probabilities of pathogenicity for individual variants, or if \code{by_model} is \code{TRUE}, then a matrix of probabilities, with rows corresponding to modes of inheritance and columns to variants.
 #' @export
 #' @seealso \code{\link{prob_pathogenic}}, \code{\link{bevimed}}
-extract_prob_pathogenic <- function(x, by_MOI=TRUE) {
-	probs <- extract_prob_association(x, by_MOI=by_MOI)
-	apply(mapply(FUN="*", probs, lapply(x$moi, extract_conditional_prob_pathogenic)), 1, if (by_MOI) identity else sum)
+extract_prob_pathogenic <- function(x, by_model=TRUE) {
+	probs <- extract_prob_association(x, by_model=TRUE)
+	var_probs_by_model <- mapply(SIMPLIFY=FALSE, FUN="*", probs, lapply(x$models, extract_conditional_prob_pathogenic))
+	if (by_model) {
+		var_probs_by_model
+	} else {
+		k <- ncol(x[["parameters"]][["G"]])
+		variant_marginals(var_probs_by_model, x[["parameters"]][["variant_sets"]], k)
+	}
 }
 
 #' Calculate variant marginal probabilities of pathogencity 
 #'
 #' Calls \code{\link{bevimed}} and \code{\link{extract_prob_pathogenic}} to obtain marginal probabilities of pathogenicity.
 #'
-#' @template by_MOI
+#' @template by_model
 #' @param ... Arguments to pass to \code{\link{bevimed}}. 
-#' @return If \code{by_MOI} is \code{FALSE}, a vector of probabilities of pathogenicity for each variant, otherwise a matrix of probabilities of pathogenicity conditional on mode of inheritance, with a column for each variant and two rows corresponding to each mode of inheritance.
+#' @return If \code{by_model} is \code{FALSE}, a vector of probabilities of pathogenicity for each variant, otherwise a list of vectors of probabilities of pathogenicity conditional on each compared association model.
 #' @export
 #' @seealso \code{\link{extract_prob_pathogenic}}, \code{\link{bevimed}}
 prob_pathogenic <- function(
-	by_MOI=FALSE,
+	by_model=FALSE,
 	...
 ) {
 	bv <- bevimed(..., return_z_trace=TRUE, return_x_trace=FALSE)
-	extract_prob_pathogenic(bv, by_MOI=by_MOI)
+	extract_prob_pathogenic(bv, by_model=by_model)
 }
 
-#' @title Extract probability of pathogenicity for variant conditional on a given mode of inheritance
+#' @title Extract probability of pathogenicity for variant conditional on a given association model
 #'
 #' @description Extract the probability of pathogenicity for individual variants from a \code{BeviMed_m} object.
 #'
@@ -290,7 +299,7 @@ prob_pathogenic <- function(
 #' @seealso \code{\link{conditional_prob_pathogenic}}, \code{\link{bevimed_m}}
 extract_conditional_prob_pathogenic <- function(x) {
 	k <- x[["parameters"]][["k"]]
-	apply(x[["traces"]][["z"]][,k*(length(x[["parameters"]][["temperatures"]])-1L)+seq(length.out=k),drop=FALSE], 2, mean)
+	if (k == 0) numeric(0) else apply(x[["traces"]][["z"]][,k*(length(x[["parameters"]][["temperatures"]])-1L)+seq(length.out=k),drop=FALSE], 2, mean)
 }
 
 #' Calculate probability of pathogencity for variants conditional on mode of inheritance.
@@ -311,3 +320,66 @@ conditional_prob_pathogenic <- function(
 	extract_conditional_prob_pathogenic(bv)
 }
 
+#' @title Model selection for multiple association models
+#' @description Apply bevimed to the no association model (gamma = 0) and multiple association models for different sets of variants, for instance, corresponding to different functional consequences.
+#' @template y
+#' @template G_matrix
+#' @template ploidy
+#' @param variant_sets List of integer vectors corresponding to sets of indices of \code{G}, each of which is to be considered in a model explaining the phenotype, \code{y}.
+#' @template prior_prob_association
+#' @template tau0_shape
+#' @param moi Character vector giving mode of inheritance for each model.
+#' @param model_specific_args List of named lists of parameters to use in \code{\link{bevimed_m}} applications for specific models.
+#' @param ... Other arguments to pass to \code{\link{bevimed_m}}.
+#' @seealso \code{\link{bevimed_m}}, \code{\link{bevimed}}
+#' @export
+bevimed_polytomous <- function(
+	y,
+	G,
+	ploidy=rep(2L, length(y)),
+	variant_sets, 
+	prior_prob_association=rep(0.01/length(variant_sets), length(variant_sets)),
+	tau0_shape=c(1, 1),
+	moi=rep("dominant", length(variant_sets)),
+	model_specific_args=vector(mode="list", length=length(variant_sets)),
+	...
+) {
+	if (sum(prior_prob_association) > 1 | sum(prior_prob_association) < 0)
+		stop("The sum of 'prior_prob_association' must be between 0 and 1")
+	if (any(prior_prob_association > 1) | any(prior_prob_association < 0))
+		stop("Each element of 'prior_prob_association' must be between 0 and 1")
+	n_models <- length(variant_sets)
+	if (length(model_specific_args) != n_models)
+		stop("The length of 'variant_sets' must be the same as 'model_specific_args'")
+	if (length(prior_prob_association) != n_models)
+		stop("The length of 'variant_sets' must be the same as 'prior_prob_association'")
+	if (length(moi) != n_models)
+		stop("The length of 'variant_sets' must be the same as 'moi'")
+	if (!all(unlist(use.names=FALSE, variant_sets) %in% seq(length.out=ncol(G))))
+		stop("All indices given in 'variant_sets' must be between one and the number of variants in 'G'")
+
+	shared <- list(...)
+
+	structure(
+		class="BeviMed",
+		list(
+			parameters=list(
+				tau0_shape=tau0_shape,
+				prior_prob_association=setNames(nm=names(variant_sets), prior_prob_association)
+				,
+				ploidy=ploidy,
+				y=y,
+				G=G,
+				variant_table=to_var_tab(get_G_args(G)),
+				variant_sets=variant_sets,
+				moi=moi
+			),
+			models=Map(
+				f=function(var_inds, min_ac, args) { do.call(what=bevimed_m, c(list(y=y, G=G[,var_inds,drop=FALSE], min_ac=min_ac), args, shared)) },
+				variant_sets,
+				lapply(moi, function(m) if (m=="dominant") { 1L } else { if (length(ploidy) == 0) 2L else ploidy }),
+				model_specific_args
+			)
+		)
+	)
+}

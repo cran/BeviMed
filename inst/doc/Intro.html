@@ -12,7 +12,7 @@
 
 <meta name="author" content="Daniel Greene" />
 
-<meta name="date" content="2017-03-01" />
+<meta name="date" content="2017-04-22" />
 
 <title>BeviMed Introduction</title>
 
@@ -52,7 +52,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 
 <h1 class="title toc-ignore">BeviMed Introduction</h1>
 <h4 class="author"><em>Daniel Greene</em></h4>
-<h4 class="date"><em>2017-03-01</em></h4>
+<h4 class="date"><em>2017-04-22</em></h4>
 
 
 
@@ -82,48 +82,51 @@ code > span.er { color: #ff0000; font-weight: bold; }
 y_random &lt;-<span class="st"> </span><span class="kw">runif</span>(<span class="dt">n=</span><span class="kw">nrow</span>(G)) &lt;<span class="st"> </span><span class="fl">0.1</span>
 
 <span class="kw">prob_association</span>(<span class="dt">G=</span>G, <span class="dt">y=</span>y_random)</code></pre>
-<pre><code>## [1] 0.002853161</code></pre>
+<pre><code>## [1] 0.002810699</code></pre>
 <p>The results indicate that there is a low probability of association. We now generate a new case control label <code>y_dependent</code> which depends on <code>G</code> - specifically, we treat variants 1 to 3 as ‘pathogenic’, and label any samples harbouring alleles for any of these variants as cases.</p>
 <pre class="sourceCode r"><code class="sourceCode r">y_dependent &lt;-<span class="st"> </span><span class="kw">apply</span>(G, <span class="dv">1</span>, function(variants) <span class="kw">sum</span>(variants[<span class="dv">1</span>:<span class="dv">3</span>]) &gt;<span class="st"> </span><span class="dv">0</span>)
 
 <span class="kw">prob_association</span>(<span class="dt">G=</span>G, <span class="dt">y=</span>y_dependent)</code></pre>
-<pre><code>## [1] 0.9997962</code></pre>
+<pre><code>## [1] 0.9998203</code></pre>
 <p>Notice that there is now a higher estimated probability of association.</p>
 <p>By default, <code>prob_association</code> integrates over mode of inheritance (e.g. are at least 1 or 2 pathogenic variants required for a pathogenic configuration?). The probabilities of association with each mode of inheritance can by shown by passing the option <code>by_MOI=TRUE</code> (for more details, including how to set the ploidy of the samples within the region, see <code>?prob_pathogenic</code>).</p>
 <p>For a more detailed output, the <code>bevimed</code> function can be used, and it’s returned values can be summarised and stored/printed.</p>
 <pre class="sourceCode r"><code class="sourceCode r">output &lt;-<span class="st"> </span><span class="kw">summary</span>(<span class="kw">bevimed</span>(<span class="dt">G=</span>G, <span class="dt">y=</span>y_dependent))
 output</code></pre>
 <pre><code>## --------------------------------------------------------------------------- 
-## Posterior prob. of association: 1 [prior: 0.01]
-## Posterior prob. of dominance given association: 1 [prior: 0.5]
+## Posterior probability of association: 1 [prior: 0.01]
+## Posterior probability of dominance given association: 1 [prior: 0.5]
+## Posterior probability of each association model given association: 
+##     dominant: 1 [prior: 0.5]
+##     recessive: 0 [prior: 0.5]
 ## --------------------------------------------------------------------------- 
-##                              dominant recessive
-## Expected explained cases        6.937     4.682
-## Expected explaining variants    2.958     6.028
+##           Explained cases Explaining variants
+## dominant            6.928               2.952
+## recessive           4.594               5.956
 ## --------------------------------------------------------------------------- 
-## Estimated probabilities of pathogenicity for individual variants
+## Probabilities of pathogenicity for individual variants
 ## 
-##  Var Ctrls Cases  Prob. dom pathogenic  Prob. rec pathogenic
-##    1     0     2 [1.00 ============= ] [0.94 ============= ]
-##    2     0     4 [1.00 ============= ] [1.00 ============= ]
-##    3     0     2 [0.94 ============= ] [0.82 ===========   ]
-##    4     9     0 [0.00               ] [0.12 =             ]
-##    5     2     1 [0.00               ] [0.25 ===           ]
-##    6     4     0 [0.00               ] [0.32 ====          ]
-##    7     3     0 [0.00               ] [0.05               ]
-##    8     2     1 [0.00               ] [0.68 =========     ]
-##    9     4     1 [0.00               ] [0.56 =======       ]
-##   10     7     0 [0.00               ] [0.00               ]
-##   11     3     0 [0.00               ] [0.46 ======        ]
-##   12     1     0 [0.01               ] [0.31 ====          ]
-##   13     4     0 [0.00               ] [0.12 =             ]
-##   14     1     2 [0.01               ] [0.94 ============= ]
-##   15     3     0 [0.00               ] [0.25 ===           ]
-##   16     5     0 [0.00               ] [0.10 =             ]
-##   17     7     0 [0.00               ] [0.22 ===           ]
-##   18     4     0 [0.00               ] [0.38 =====         ]
-##   19     7     2 [0.00               ] [0.84 ===========   ]
-##   20     6     0 [0.00               ] [0.38 =====         ]
+##  Var   Probability pathogenic
+##    1 [1.00 =================]
+##    2 [1.00 =================]
+##    3 [0.94 ================ ]
+##    4 [0.00                  ]
+##    5 [0.00                  ]
+##    6 [0.00                  ]
+##    7 [0.00                  ]
+##    8 [0.00                  ]
+##    9 [0.00                  ]
+##   10 [0.00                  ]
+##   11 [0.00                  ]
+##   12 [0.01                  ]
+##   13 [0.00                  ]
+##   14 [0.02                  ]
+##   15 [0.00                  ]
+##   16 [0.00                  ]
+##   17 [0.00                  ]
+##   18 [0.00                  ]
+##   19 [0.00                  ]
+##   20 [0.00                  ]
 ## ---------------------------------------------------------------------------</code></pre>
 
 
