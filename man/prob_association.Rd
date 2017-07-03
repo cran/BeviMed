@@ -20,4 +20,3 @@ Calculate probability of an association between case/control label and allele co
 \seealso{
 \code{\link{bevimed}}, \code{\link{extract_prob_association}}
 }
-

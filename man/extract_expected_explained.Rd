@@ -18,4 +18,3 @@ Extract expected number of cases explained by pathogenic configurations of allel
 \seealso{
 \code{\link{expected_explained}}, \code{\link{bevimed_m}}
 }
-

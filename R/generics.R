@@ -60,7 +60,16 @@ summary.BeviMed_m <- function(object, confidence=0.95, simulations=1000, ...) {
 		omega_estimated=omega_estimated,
 		phi_estimated=phi_estimated,
 		phi=if (phi_estimated) mean(exp(object[["traces"]][["log_phi"]][,num_temps])) else NA,
-		omega=if (omega_estimated) mean(1-1/(1+exp(object[["traces"]][["logit_omega"]][,num_temps]))) else NA,
+		omega=if (omega_estimated) { 
+			mean(1-1/(1+exp(object[["traces"]][["logit_omega"]][,num_temps]))) 
+		} else { 
+			if (has_z & all(object[["parameters"]][["c_weights"]] == 0)) {
+				sumZ <- apply(t1_z_trace(object),1,sum)
+				(object[["parameters"]][["omega_shape"]][1] + mean(sumZ))/sum(c(k,object[["parameters"]][["omega_shape"]]))
+			} else {
+				NA 
+			}
+		},
 		phi_acceptance_rate=if (phi_estimated) apply(object[["traces"]][["log_phi"]], 2, function(log_phis) mean(log_phis[-length(log_phis)] != log_phis[-1])) else NA, 
 		omega_acceptance_rate=if (omega_estimated) apply(object[["traces"]][["logit_omega"]], 2, function(logit_omegas) mean(logit_omegas[-length(logit_omegas)] != logit_omegas[-1])) else NA, 
 		N=length(object[["parameters"]][["y"]]),
@@ -121,19 +130,31 @@ print.BeviMed_summary <- function(x, print_prob_pathogenic=TRUE, ...) {
 	stopifnot(class(x) == "BeviMed_summary")
 	dashed <- paste0(rep("-", getOption("width")), collapse="")
 	cat(dashed, "\n")
-	cat("Posterior probability of association: ", round(sum(x[["prob_association"]]), digits=3), " [prior: ", round(sum(x[["prior_prob_association"]]), digits=3), "]\n", sep="")
-	cat("Posterior probability of dominance given association: ", round(sum(x[["prob_association"]][x[["moi"]]=="dominant"])/sum(x[["prob_association"]]), digits=3), " [prior: ", round(sum(x[["prior_prob_association"]][x[["moi"]]=="dominant"])/sum(x[["prior_prob_association"]]), digits=3), "]\n", sep="")
-	cat("Posterior probability of each association model given association: \n")
-	cat(paste0(collapse="", "    ", if (!is.null(names(x[["prob_association"]]))) names(x[["prob_association"]]) else seq(length.out=length(x[["prob_association"]])), ": ", round(x[["prob_association"]]/sum(x[["prob_association"]]), digits=3), " [prior: ", round(x[["prior_prob_association"]]/sum(x[["prior_prob_association"]]), digits=3), "]\n"), sep="")
+	cat("Posterior probability of association: \n\t", round(sum(x[["prob_association"]]), digits=3), " [prior: ", round(sum(x[["prior_prob_association"]]), digits=3), "]\n", sep="")
+
+	cat("Posterior probability of dominance given association: \n\t", round(sum(x[["prob_association"]][x[["moi"]]=="dominant"])/sum(x[["prob_association"]]), digits=3), " [prior: ", round(sum(x[["prior_prob_association"]][x[["moi"]]=="dominant"])/sum(x[["prior_prob_association"]]), digits=3), "]\n", sep="")
+
+	model_names <- if (!is.null(names(x[["prob_association"]]))) names(x[["prob_association"]]) else seq(length.out=length(x[["prob_association"]]))
 
 	cat(dashed, "\n")
 
-	summary_mat <- cbind(
-		`Explained cases`=sapply(x[["models"]], function(m) { ee <- "expected_explained"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } }),
-		`Explaining variants`=sapply(x[["models"]], function(m) { ee <- "explaining_variants"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } })
-	)
-	print(as.data.frame(round(digits=3, summary_mat[apply(summary_mat, 1, function(r) !any(is.na(r))),,drop=FALSE])))
+	summary_mat <- data.frame(
+		check.names=FALSE,
+		stringsAsFactors=FALSE,
+		Model=model_names,
+		`Post`=x[["prob_association"]]/sum(x[["prob_association"]]),
+		`Prior`=x[["prior_prob_association"]]/sum(x[["prior_prob_association"]]),
+		`Cases`=sapply(x[["models"]], function(m) { ee <- "expected_explained"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } }),
+		`Variants`=sapply(x[["models"]], function(m) { ee <- "explaining_variants"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } })
+	)[order(x[["prob_association"]], decreasing=TRUE),]
 
+	print(row.names=FALSE, digits=3, summary_mat)
+
+	cat("\n")
+	cat("Post: posterior probability of model given association\n")
+	cat("Prior: prior probability of model given association\n")
+	cat("Cases: posterior expected number of cases explained\n")
+	cat("Variants: posterior expected number of variants involved in explained cases\n")
 	cat(dashed, "\n")
 	if (print_prob_pathogenic) {
 		cat("Probabilities of pathogenicity for individual variants\n\n")

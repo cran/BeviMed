@@ -34,4 +34,3 @@ Calculate log lower bound for marginal probability of data under model gamma = 1
 \seealso{
 \code{\link{exact_evidence}}
 }
-

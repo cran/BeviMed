@@ -15,4 +15,3 @@ stack_BeviMeds(objects)
 \description{
 This function could be used to stitch together consecutive chains to create one larger sampled set of states from the MCMC procedure.
 }
-

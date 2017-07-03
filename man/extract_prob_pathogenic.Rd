@@ -20,4 +20,3 @@ Extract the marginal probability of pathogenicity for individual variants from \
 \seealso{
 \code{\link{prob_pathogenic}}, \code{\link{bevimed}}
 }
-

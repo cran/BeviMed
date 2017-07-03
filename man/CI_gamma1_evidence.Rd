@@ -22,4 +22,3 @@ Confidence interval as numeric vector of length 2.
 \description{
 Central limit theorem not applicable so use simulation to estimate confidence interval for evidence.
 }
-

@@ -21,4 +21,3 @@ Print readable summary of \code{BeviMed_summary} object.
 
 Print summary statistics of BeviMed inference, including probability of association, probability of dominant inheritance given association and probability of pathogenicity of each variant under dominant and recessive inheritance.
 }
-

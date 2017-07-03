@@ -31,7 +31,9 @@ bevimed(y, G, ploidy = rep(2L, length(y)), prior_prob_association = 0.01,
 \description{
 Infer probabilities of association between disease label and locus and posterior parameter values under BeviMed model.
 }
+\references{
+Greene et al., A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases, The American Journal of Human Genetics (2017), http://dx.doi.org/10.1016/j.ajhg.2017.05.015.
+}
 \seealso{
 \code{\link{prob_association}}, \code{\link{bevimed_m}}, \code{\link{summary.BeviMed}}, \code{\link{bevimed_polytomous}}
 }
-

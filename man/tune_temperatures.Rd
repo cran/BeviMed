@@ -19,4 +19,3 @@ If \code{return_temperatures == TRUE}, a numeric vector of tuned temperatures, o
 \description{
 Tune temperatures using interval bisection to minimimise Kullback-Liebler divergence between adjacent power posteriors
 }
-

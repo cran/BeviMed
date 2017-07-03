@@ -18,4 +18,3 @@ Extract the probability of pathogenicity for individual variants from a \code{Be
 \seealso{
 \code{\link{conditional_prob_pathogenic}}, \code{\link{bevimed_m}}
 }
-

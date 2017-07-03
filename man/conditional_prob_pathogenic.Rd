@@ -18,4 +18,3 @@ Calls \code{\link{bevimed_m}} and \code{\link{extract_conditional_prob_pathogeni
 \seealso{
 \code{\link{extract_conditional_prob_pathogenic}}, \code{\link{bevimed_m}}
 }
-

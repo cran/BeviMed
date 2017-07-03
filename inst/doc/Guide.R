@@ -68,5 +68,4 @@ bevimed_polytomous(y=G[,1] > 0, G=G, variant_sets=list(`first`=1, `all`=1:ncol(G
 #  	check.names=FALSE,
 #  	stringsAsFactors=FALSE
 #  )))
-#  
 

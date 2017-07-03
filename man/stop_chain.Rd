@@ -45,4 +45,3 @@ An object of class \code{BeviMed}.
 \description{
 Sample blocks of a given size until either the estimated log marginal likelihood falls within a given confidence interval, there is sufficient confidence that the evidence model gamma = 1 is at most a certain quantity, or a certain number of blocks have been sampled.
 }
-

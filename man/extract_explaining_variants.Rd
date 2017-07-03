@@ -18,4 +18,3 @@ Extract expected number of variants involved in cases explained by pathogenic co
 \seealso{
 \code{\link{explaining_variants}}, \code{\link{bevimed_m}}
 }
-

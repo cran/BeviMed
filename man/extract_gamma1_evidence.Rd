@@ -18,4 +18,3 @@ Extract evidence from \code{BeviMed_m} object.
 \seealso{
 \code{\link{gamma1_evidence}}, \code{\link{bevimed_m}}
 }
-

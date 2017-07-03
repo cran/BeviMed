@@ -32,7 +32,9 @@ bevimed_polytomous(y, G, ploidy = rep(2L, length(y)), variant_sets,
 \description{
 Apply bevimed to the no association model (gamma = 0) and multiple association models for different sets of variants, for instance, corresponding to different functional consequences.
 }
+\references{
+Greene et al., A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases, The American Journal of Human Genetics (2017), http://dx.doi.org/10.1016/j.ajhg.2017.05.015.
+}
 \seealso{
 \code{\link{bevimed_m}}, \code{\link{bevimed}}
 }
-

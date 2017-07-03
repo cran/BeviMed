@@ -20,4 +20,3 @@ Directly evaluate evidence for model gamma = 1 by summing likelihood over all pa
 \seealso{
 \code{\link{gamma0_evidence}}, \code{\link{lower_bound_gamma1_evidence}}
 }
-

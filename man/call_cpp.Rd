@@ -81,4 +81,3 @@ Object of class \code{BeviMed_raw}, containing the output of the MCMC sampling.
 \description{
 Allows other functions in the package to call the c++ function passing arguments more succinctly and by name.
 }
-

@@ -1,0 +1,22 @@
+citHeader("To cite BeviMed in publications use:")
+
+citEntry(entry = "Article",
+  title        = "A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases",
+  author       = personList(
+  					as.person("Daniel Greene"),
+                   person(family="NIHR BioResource"),
+                   as.person("Sylvia Richardson"),
+				   as.person("Ernest Turro")),
+  journal      = "American Journal of Human Genetics",
+  year         = "2017",
+  doi = "10.1016/j.ajhg.2017.05.015",
+  publisher	= "{Elsevier}",
+
+  textVersion  =
+	  paste("Greene D, NIHR BioResource, Richardson S and Turro E (2017).",
+		  "A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases.",
+		  "Am. J. Hum. Genet. doi: 10.1016/j.ajhg.2017.05.015.")
+)
+
+
+

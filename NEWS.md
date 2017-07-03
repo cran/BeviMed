@@ -1,3 +1,8 @@
+# BeviMed 5.1
+
+* New function, `subset_variants`, which retains only variants with data bearing upon pathogenicity.
+* Return posterior mean of `omega` even when not explicitly sampled in `summary.BeviMed_m`.
+
 # BeviMed 5.0
 
 * `bevimed_polytomous` function added which enables application of BeviMed across multiple association models. 

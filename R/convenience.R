@@ -1,3 +1,14 @@
+subset_bevimed_m <- function(G, min_ac=1L, variant_weights=NULL, ...) {
+	vars <- subset_variants(G=G, min_ac=min_ac, return_variants=TRUE)
+
+	bevimed_m(
+		G=G[,vars,drop=FALSE],
+		min_ac=min_ac,
+		variant_weights=if (is.null(variant_weights)) NULL else variant_weights[vars],
+		...
+	)
+}
+
 #' @title Bayesian Evaluation of Variant Involvement in Mendelian Disease 
 #'
 #' @description Infer probabilities of association between disease label and locus and posterior parameter values under BeviMed model.
@@ -13,6 +24,7 @@
 #' @return \code{BeviMed} object containing results of inference.
 #' @export
 #' @seealso \code{\link{prob_association}}, \code{\link{bevimed_m}}, \code{\link{summary.BeviMed}}, \code{\link{bevimed_polytomous}}
+#' @template paper
 bevimed <- function(
 	y,
 	G,
@@ -82,7 +94,7 @@ extract_gamma1_evidence <- function(x) {
 gamma1_evidence <- function(
 	...
 ) {
-	bv <- bevimed_m(
+	bv <- subset_bevimed_m(
 		return_z_trace=FALSE,
 		return_x_trace=FALSE,
 		...
@@ -114,7 +126,7 @@ extract_expected_explained <- function(x) {
 #' @export
 #' @seealso \code{\link{bevimed_m}}, \code{\link{extract_expected_explained}}
 expected_explained <- function(...) {
-	extract_expected_explained(bevimed_m(
+	extract_expected_explained(subset_bevimed_m(
 		return_z_trace=FALSE,
 		return_x_trace=TRUE,
 		...
@@ -132,8 +144,8 @@ extract_explaining_variants <- function(x) {
 	stopifnot(class(x) == "BeviMed_m")
 	if (("z" %in% names(x[["traces"]]))*dim(x[["traces"]][["z"]])[1] == 0)
 		stop("Must make sure to set 'return_z_trace=TRUE' and 'return_x_trace=TRUE' in call to 'bevimed_m' to use this function")
-
-	logicalG <- x$parameters$G > 0
+	G <- x$parameters$G
+	logicalG <- matrix(G > 0, nrow=nrow(G), ncol=ncol(G))
 	y <- x$parameters$y
 	mean(mapply(
 		SIMPLIFY=TRUE,
@@ -152,7 +164,7 @@ extract_explaining_variants <- function(x) {
 #' @export
 #' @seealso \code{\link{extract_explaining_variants}}, \code{\link{bevimed_m}}
 explaining_variants <- function(...) {
-	extract_explaining_variants(bevimed_m(return_z_trace=TRUE, return_x_trace=TRUE, ...))
+	extract_explaining_variants(subset_bevimed_m(return_z_trace=TRUE, return_x_trace=TRUE, ...))
 }
 
 #' Calculate log Bayes factor between an association model with a given mode of inheritance and model gamma = 0
@@ -289,6 +301,11 @@ prob_pathogenic <- function(
 	extract_prob_pathogenic(bv, by_model=by_model)
 }
 
+t1_z_trace <- function(x) {
+	k <- x[["parameters"]][["k"]]
+	x[["traces"]][["z"]][,k*(length(x[["parameters"]][["temperatures"]])-1L)+seq(length.out=k),drop=FALSE]
+}
+
 #' @title Extract probability of pathogenicity for variant conditional on a given association model
 #'
 #' @description Extract the probability of pathogenicity for individual variants from a \code{BeviMed_m} object.
@@ -298,8 +315,7 @@ prob_pathogenic <- function(
 #' @export
 #' @seealso \code{\link{conditional_prob_pathogenic}}, \code{\link{bevimed_m}}
 extract_conditional_prob_pathogenic <- function(x) {
-	k <- x[["parameters"]][["k"]]
-	if (k == 0) numeric(0) else apply(x[["traces"]][["z"]][,k*(length(x[["parameters"]][["temperatures"]])-1L)+seq(length.out=k),drop=FALSE], 2, mean)
+	if (x[["parameters"]][["k"]] == 0) numeric(0) else apply(t1_z_trace(x), 2, mean)
 }
 
 #' Calculate probability of pathogencity for variants conditional on mode of inheritance.
@@ -332,6 +348,7 @@ conditional_prob_pathogenic <- function(
 #' @param model_specific_args List of named lists of parameters to use in \code{\link{bevimed_m}} applications for specific models.
 #' @param ... Other arguments to pass to \code{\link{bevimed_m}}.
 #' @seealso \code{\link{bevimed_m}}, \code{\link{bevimed}}
+#' @template paper
 #' @export
 bevimed_polytomous <- function(
 	y,

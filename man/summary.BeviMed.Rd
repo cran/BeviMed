@@ -29,4 +29,3 @@ Returns a \code{BeviMed_summary} object, which is a list containing elements:
 \seealso{
 \code{\link{summary.BeviMed_m}}
 }
-

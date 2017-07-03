@@ -20,4 +20,3 @@ Calls \code{\link{bevimed}} and \code{\link{extract_prob_pathogenic}} to obtain 
 \seealso{
 \code{\link{extract_prob_pathogenic}}, \code{\link{bevimed}}
 }
-

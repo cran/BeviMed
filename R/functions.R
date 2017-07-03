@@ -204,6 +204,20 @@ CI_gamma1_evidence <- function(
 	quantile(probs=c((1-confidence)/2,1-(1-confidence)/2), simulated_MLs)
 }
 
+#' @title Remove variants with no data for pathogenicity
+#' @description Subset an allele count matrix given a minimum allele count threshold for pathogenicity per individual so that only variants for which data relevant to pathogencity are retained. This is useful to apply before running \code{\link{bevimed}} as it reduces the size of the parameter space used in the inference. 
+#' @template G_matrix
+#' @template min_ac 
+#' @param return_variants Logical value determining whether to return an integer vector of indices of retained variants or the subsetted allele count matrix
+#' @export
+subset_variants <- function(G, min_ac=1L, return_variants=FALSE) {
+	vars <- which(apply(G[apply(G, 1, sum) >= min_ac,,drop=FALSE], 2, sum) > 0L)
+	if (return_variants)
+		vars
+	else
+		G[,vars,drop=FALSE]
+}
+
 #' @title Apply the MCMC algorithm in blocks until conditions are met
 #'
 #' @description Sample blocks of a given size until either the estimated log marginal likelihood falls within a given confidence interval, there is sufficient confidence that the evidence model gamma = 1 is at most a certain quantity, or a certain number of blocks have been sampled.
@@ -418,7 +432,7 @@ to_var_tab <- function(G_args) {
 #' @return An object of class \code{BeviMed_m}.
 #' @details A \code{BeviMed_m} object is a list containing elements:
 #' \itemize{
-#' \item `parameters': a list containing arguments used in the function call,
+#' \item `parameters': a list containing arguments used in the function call, including the adjusted weights used in the inference in the `c_weights' slot,
 #' \item `traces': a list of traces of model parameters from all MCMC chains for each parameter. Parameters sampled are z, omega, phi and x (the indicator of having a pathogenic configuration of alleles). The list of traces is named by parameter name, and each is a matrix where the rows correspond to samples. $z has k columns for each temperature, with the samples from the true posterior (i.e. with temperature equal to 1) of z corresponding to the final k columns. Likewise, the true posterior is given by the final column for the traces of phi and omega. The trace of x is only given for temperature equal to 1 to reduce memory usage.
 #' \item `final': a list named by model parameter giving the final sample of each,
 #' \item `swaps': a list with an element named `accept' which is a logical vector whose ith element indicates whether the ith swap between adjacent tempered chains was accepted or not, and an element named `at_temperature`, an integer vector whose ith element indicates which pair of consecutive temperatures was the ith to be proposed for swapping (giving the lowest one). 
@@ -426,6 +440,7 @@ to_var_tab <- function(G_args) {
 #' @export
 #' @importFrom stats rnorm runif rbeta sd
 #' @seealso \code{\link{bevimed_m}}, \code{\link{prob_association_m}}
+#' @template paper
 bevimed_m <- function(
 	y,
 	G,
@@ -479,8 +494,9 @@ bevimed_m <- function(
 		
 	G_args <- get_G_args(G)
 
-	comphet_cases <- apply(G > 0, 1, sum) > 1
-	comphet_variants <- lapply(split(G[comphet_cases,,drop=FALSE] > 0, seq(length.out=sum(comphet_cases))), which)
+	G_logical <- matrix(data=G > 0, nrow=nrow(G), ncol=ncol(G))
+	comphet_cases <- apply(G_logical, 1, sum) > 1
+	comphet_variants <- lapply(split(G_logical[comphet_cases,,drop=FALSE], seq(length.out=sum(comphet_cases))), which)
 	comphet_block_ends <- unname(cumsum(lapply(comphet_variants, length)))
 	comphet_block_starts <- if (length(comphet_block_ends) > 0) c(0, comphet_block_ends[-length(comphet_block_ends)]) else integer(0)
 	adjusted_tvu <- if (sum(comphet_cases) > 0) tandem_variant_updates else 0
@@ -655,6 +671,7 @@ bevimed_m <- function(
 					y=y,
 					min_ac=min_ac,
 					variant_table=to_var_tab(G_args),
+					c_weights=c_weights,
 					G=G,
 					N=length(y),
 					k=ncol(G)

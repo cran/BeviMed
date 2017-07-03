@@ -20,4 +20,3 @@ Marginal probability calculated exactly by integration.
 \seealso{
 \code{\link{bevimed}}, \code{\link{gamma1_evidence}}
 }
-

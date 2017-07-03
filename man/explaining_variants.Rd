@@ -18,4 +18,3 @@ Use \code{\link{bevimed_m}} to perform inference under model gamma = 1 and retur
 \seealso{
 \code{\link{extract_explaining_variants}}, \code{\link{bevimed_m}}
 }
-

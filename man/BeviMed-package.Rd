@@ -16,6 +16,9 @@ Daniel Greene.
 
 Maintainer: Daniel Greene <dg333@cam.ac.uk>
 }
+\references{
+Greene et al., A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases, The American Journal of Human Genetics (2017), http://dx.doi.org/10.1016/j.ajhg.2017.05.015.
+}
 \keyword{ package, statistical association test, Bayesian inference, rare disease  }
 \seealso{
   \code{\link{bevimed}}

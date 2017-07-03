@@ -76,13 +76,15 @@ Sample from posterior distribution of parameters under model gamma = 1 and condi
 \details{
 A \code{BeviMed_m} object is a list containing elements:
 \itemize{
-\item `parameters': a list containing arguments used in the function call,
+\item `parameters': a list containing arguments used in the function call, including the adjusted weights used in the inference in the `c_weights' slot,
 \item `traces': a list of traces of model parameters from all MCMC chains for each parameter. Parameters sampled are z, omega, phi and x (the indicator of having a pathogenic configuration of alleles). The list of traces is named by parameter name, and each is a matrix where the rows correspond to samples. $z has k columns for each temperature, with the samples from the true posterior (i.e. with temperature equal to 1) of z corresponding to the final k columns. Likewise, the true posterior is given by the final column for the traces of phi and omega. The trace of x is only given for temperature equal to 1 to reduce memory usage.
 \item `final': a list named by model parameter giving the final sample of each,
 \item `swaps': a list with an element named `accept' which is a logical vector whose ith element indicates whether the ith swap between adjacent tempered chains was accepted or not, and an element named `at_temperature`, an integer vector whose ith element indicates which pair of consecutive temperatures was the ith to be proposed for swapping (giving the lowest one). 
 }
 }
+\references{
+Greene et al., A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases, The American Journal of Human Genetics (2017), http://dx.doi.org/10.1016/j.ajhg.2017.05.015.
+}
 \seealso{
 \code{\link{bevimed_m}}, \code{\link{prob_association_m}}
 }
-

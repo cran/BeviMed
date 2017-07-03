@@ -22,4 +22,3 @@ Compute log Bayes factor of an association model and model gamma = 0.
 \seealso{
 \code{\link{bevimed_m}}, \code{\link{prob_association_m}}
 }
-

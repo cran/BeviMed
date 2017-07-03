@@ -24,4 +24,3 @@ Equivalent to \code{\link{prob_association}} where the prior probability of one 
 \seealso{
 \code{\link{log_BF}}, \code{\link{prob_association}}, \code{\link{bevimed_m}}
 }
-

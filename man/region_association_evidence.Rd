@@ -27,4 +27,3 @@ Marginal probability of model with aggregated allele counts.
 \seealso{
 \code{\link{gamma0_evidence}}
 }
-

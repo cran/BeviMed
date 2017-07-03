@@ -20,4 +20,3 @@ Get posterior probability of association as numeric value, or optionally as nume
 \seealso{
 \code{\link{prob_association}}, \code{\link{bevimed}}
 }
-

@@ -20,4 +20,3 @@ Print summary statistics of BeviMed inference, including probability of associat
 \seealso{
 \code{\link{summary.BeviMed}}
 }
-

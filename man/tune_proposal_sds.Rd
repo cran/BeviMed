@@ -34,4 +34,3 @@ Numeric vector of proposal SDs for the different temperature chains.
 \description{
 Tune the proposal standard deviations for the Metropolis-Hastings updates of either phi or omega
 }
-

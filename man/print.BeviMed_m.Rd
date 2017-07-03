@@ -20,4 +20,3 @@ Print summary statistics for \code{BeviMed_m} object.
 \seealso{
 \code{\link{summary.BeviMed_m}}
 }
-

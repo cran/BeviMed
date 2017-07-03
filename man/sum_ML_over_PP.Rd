@@ -17,4 +17,3 @@ Numeric value of estimated log marginal likelihood.
 \description{
 Calculate the Marginal Likelihood by summation over power posterior likelihood exptectances
 }
-
