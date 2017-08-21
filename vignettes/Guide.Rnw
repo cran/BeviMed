@@ -41,13 +41,11 @@ y <- apply(G[,z,drop=FALSE], 1, sum) > 0
 \title{BeviMed Guide}
 \documentclass[10pt]{article}
 \usepackage[utf8]{inputenc}
-\usepackage{graphicx}
 \usepackage{amssymb}
 \usepackage{amsmath}
 \usepackage{color}
 \usepackage{enumerate}
 \usepackage[margin=2cm]{geometry} 
-\usepackage{bbm}
 \usepackage{authblk}
 
 \author{Daniel Greene}
@@ -58,15 +56,17 @@ y <- apply(G[,z,drop=FALSE], 1, sum) > 0
 		\maketitle
 
 \section{Introduction}
-	BeviMed~\cite{bevimed} is a procedure for evaluating the evidence of association between allele configurations across rare variants within a genomic locus and a case/control label.
-	It is capable of inferring the probability of association, and conditional on association, the probability of each mode of inheritance and probability of involvement of each variant. 
-	It works by applying Bayesian inference to two models indexed by $\gamma$. 
+	BeviMed~\cite{bevimed} is a procedure for evaluating the evidence of association between allele configurations across rare variants, typically within a genomic locus, and a case/control label.
+	It is capable of inferring the posterior probability of association, and conditional on association, the probability of each mode of inheritance and probability of involvement of each variant. 
+	It works by applying Bayesian model comparison between to two models indexed by $\gamma$. 
 	Under the model labelled $\gamma = 0$, the probability of case status is independent of allele configuration at the given rare variant sites. 
-	Under the model labelled $\gamma = 1$, the probability of case status is linked to the configuration of alleles, and a latent partition of variants into \emph{pathogenic} and \emph{non-pathogenic} groups conditional on a mode of inheritance.  It can also perform model selection on multiple models of association corresponding to different classes of variants.
+	Under the model labelled $\gamma = 1$, the probability of case status is linked to the configuration of alleles, and a latent partition of variants into \emph{pathogenic} and \emph{non-pathogenic} groups conditional on a mode of inheritance.  
+	It can also compare several alternative models, each of which includes a different subset of variants. 
+	This has the effect of inducing a prior correlation on the variant pathogenicities, which can boost power if only a particular (though unknown) class of variants is responsible for disease.
 
-	The aim of the package is to facilitate prioritisation of large numbers of loci and the variants therein by rapid inference of the posterior distributions of $\gamma$, mode of inheritance parameter $m$, and indicator of pathogenicity across variants, $z$. 
+	The aim of the package is to facilitate prioritisation of large numbers variant sets, typically drawn from different loci, by rapid inference of the posterior distributions of $\gamma$, mode of inheritance parameter $m$, and indicator of pathogenicity across variants, $z$. 
 	This guide describes the interface of the package in detail, relating it to the underlying statistical model and including some implementation details. 
-	See the `BeviMed Introduction' package for a quick start guide. 
+	See the `BeviMed Introduction' vignette for a quick start guide. 
 	The description is given in terms of the paper, Greene et al. (2017)~\cite{bevimed}, although it is not necessary to read the paper in order to follow it.
 	Unless otherwise stated, $N$ refers to the number of individuals, $k$ refers to the number of rare variants, $m$ refers to the mode of inheritance (either $m_{\text{dom}}$ or $m_{\text{rec}}$), and `evidence' refers to the integrated likelihood of the data under a given model. The acronym `MOI' will often be used to refer to mode of inheritance.
 
@@ -75,7 +75,7 @@ y <- apply(G[,z,drop=FALSE], 1, sum) > 0
 	\begin{itemize}
 		\item \texttt{gamma0\_evidence}, which computes the evidence for model $\gamma = 0$, $\mathbb{P}(y|\gamma=0)$.
 		\item \texttt{bevimed\_m}, which samples from the posterior distribution of the model $\gamma = 1$ conditional on a given mode of inheritance. The output yields the evidence $\mathbb{P}(y|m,\gamma=1,G)$ and probabilities of variant pathogenicity, $\mathbb{P}(z_j|m,\gamma=1,y,G)$ for $j = 1, \dots, k$.
-		\item \texttt{bevimed}, which evaluates all three models in turn by calling \texttt{gamma0\_evidence} and \texttt{bevimed\_m} with respect to each mode of inheritance. By allowing prior probabilities and computing the evidence for each model, it allows the posterior quantities of interest to be computed using Bayes theorem. 
+		\item \texttt{bevimed}, which evaluates all three models in turn by calling \texttt{gamma0\_evidence} and \texttt{bevimed\_m} with respect to each mode of inheritance. By allowing prior probabilities and computing the evidence for each model, it allows the posterior quantities of interest to be computed using Bayes' theorem. 
 		\begin{itemize}
 			\item model indicator $\gamma$, $\mathbb{P}(\gamma = 1|y,G)$
 			\item mode of inheritance $m$ given association, $\mathbb{P}(m|\gamma=1,y,G)$.
@@ -108,11 +108,11 @@ An object of class \texttt{BeviMed} is a list containing slots:
 Objects of class \texttt{BeviMed} typically consume a large amount of memory. Summarising objects of class \texttt{BeviMed} with \texttt{summary} --- which retains important summary statistics as a list --- may be useful when performing multiple applications. Specific summary statistics can be obtained by looking them up in these summary lists (see help page \texttt{?summary.BeviMed} for names used for each statistic). 
 
 \medskip
-\texttt{bevimed} passes arguments to \texttt{bevimed\_m} through the `\texttt{...}' argument. However, sometimes it is preferable to pass different arguments to \texttt{bevimed\_m} depending on mode of inheritance. \texttt{bevimed} therefore allows mode of inheritance specific arguments to be passed through \texttt{dominant\_args} and \texttt{recessive\_args}, which should be named lists of arguments then only used in the corresponding calls to \texttt{bevimed\_m}. For example, it might be thought that fewer variants would be linked to disease given a dominant mode of inheritance than would given recessive inheritance, in which case \texttt{dominant\_args} could be used to pass a prior with a lower mean to the dominant application of \texttt{bevimed\_m}. 
+\texttt{bevimed} passes arguments to \texttt{bevimed\_m} through the `\texttt{...}' argument. However, sometimes it is preferable to pass different arguments to \texttt{bevimed\_m} depending on mode of inheritance. \texttt{bevimed} therefore allows mode of inheritance specific arguments to be passed through \texttt{dominant\_args} and \texttt{recessive\_args}, which should be named lists of arguments then only used in the corresponding calls to \texttt{bevimed\_m}. For example, it might be thought that fewer variants would be linked to disease given a dominant mode of inheritance than would given recessive inheritance, in which case \texttt{dominant\_args} could be used to pass a prior with a lower mean for the parameter to the dominant application of \texttt{bevimed\_m}. 
 
 Similarly, \texttt{bevimed\_polytomous} evaluates association models depending on variants corresponding to those in the given \texttt{variant\_sets} argument: a list of \texttt{integer} vectors, one for each model, each indexing variants with respect to their column position in $G$. Arguments are passed to \texttt{bevimed\_m} through the `\texttt{...}' argument, as with \texttt{bevimed}, but model specific arguments are passed using the parameter \texttt{model\_specific\_args}: a list of the same length as \texttt{variant\_sets}. The mode of inheritance parameter for each association model can be specified as using a character vector the same length as \texttt{variant\_sets} containing elements "dominant" or "recessive" (defaults to \texttt{"dominant"}). The prior probability of association for each model can also be specified as a numeric vector of probabilities using the argument \texttt{prior\_prob\_association}.
 
-In this example we use \texttt{bevimed\_polytomous} to compare two models in the situation where the disease status depends on only the allele configuration at the first variant site from amongst \Sexpr{ncol(G)} columns: one depending on just first variant and one depending on all of the variants. 
+In this example we use \texttt{bevimed\_polytomous} to compare two models in the situation where the disease status depends on only the allele configuration at the first variant site from amongst \Sexpr{ncol(G)} columns: one depending on just the first variant and one depending on all the variants. 
 
 <<polytomous, echo=TRUE>>=
 bevimed_polytomous(y=G[,1] > 0, G=G, variant_sets=list(`first`=1, `all`=1:ncol(G)))
@@ -152,8 +152,10 @@ The user can control the prior distributions of the model parameters when applyi
 	Typically loci would correspond to genes, but it is also applicable to non-coding loci, for example, transcription factor binding sites. In order to increase power, variants which are unlikely to be involved in disease can be filtered out, or have their probability of pathogenicity down-weighted using the \texttt{variant\_weights} parameter. For example, synonymous variants could be removed, and loss-of-function variants could be up-weighted. It is also straightforward to apply the inference to multiple sets of variants corresponding to different classes of variants for a single locus using the \texttt{bevimed\_polytomous} function. For example, a set containing only loss-of-function variants could be used to evaluate evidence for association between the disease and a `knocked-out' gene. This increases power if the only variants of a particular class increase disease risk. Prior probabilities of association with each model set can then be combined with the evidence to obtain the posterior probability of association with each model/variant set.
 
 \medskip
-Although typically testing association between a disease and multiple loci is required, \texttt{BeviMed} only provides procedures for dealing with a single locus. This is because most of the time such an analysis is computationally expensive due to the large number of applications required or large quantity of genetic data which must be loaded, and full control is required in order to best exploit the resources available. Here we provide a simple example script which applies the inference to multiple loci and tabulates the results with columns for gene name, posterior probability of association and probability of dominant inheritance given the association.
+Although typically testing association between a disease and multiple sets of variants is required, \texttt{BeviMed} only provides procedures for dealing with a single set of variants at a time. This is because such analyses are often computationally expensive due to targeting a large number of sets of variants or involve a large volume of genetic data, and full control of the distribution of jobs between CPUs and compute nodes is required in order to best exploit the resources available. 
+Here we provide a simple example script which applies the inference to multiple loci and tabulates the results with columns for gene name, posterior probability of association and probability of dominant inheritance given the association.
 Let \texttt{chr1genes} be a \texttt{data.frame} of chromosome 1 genes with columns for name, start position and end positon (the `biomaRt' package could be used to obtain such a table), and \texttt{y} be a logical vector indicating disease status, the same length as the number of samples in the VCF.
+Note that it may be necessary to read the VCF data into R in smaller parts, e.g. by modifying the \texttt{from} and \texttt{to} arguments of \texttt{vcf2matrix} accordingly, so as not to overwhelm the memory.
 
 <<multiple, eval=FALSE, echo=TRUE>>=
 source(paste0(system.file(package="BeviMed", "/scripts/vcf.R")))
@@ -191,9 +193,12 @@ As an MCMC based procedure, statistics produced from \texttt{bevimed} have Monte
 \end{itemize}
 It is also possible to instruct \texttt{bevimed\_m} to halt sampling once the estimated evidence lies within a given confidence interval, or once there is sufficient confidence that the evidence is greater than some threshold. The latter might be useful, for instance, if many regions were being tested for association and only those with very strong evidence for association were of interest). By default, \texttt{bevimed\_m} does not attempt to stop sampling, and always draws \texttt{samples\_per\_chain} samples for each tempered chain. In terms of the argument names, by setting \texttt{stop\_early=TRUE}, \texttt{bevimed\_m} draws up to \texttt{blocks} batches of \texttt{samples\_per\_chain} samples, stopping as soon as the estimated log evidence lies within a confidence interval of width \texttt{tolerance} (defaults to 1) with confidence of \texttt{confidence} (defaults to 0.95) based on \texttt{simulations} simulations (defaults to $1,000$), or as soon as there is \texttt{confidence} confidence that it is below \texttt{log\_evidence\_threshold}.
 
-By default the function \texttt{bevimed\_m} stores the complete set of samples drawn during the MCMC process (after burn-in samples are removed) and therefore this function typically uses lots of memory. The vast majority of memory usage is expended storing the trace of samples of $z$, the indicator of pathogenicity for each variant) and $x$, the indicator of having a pathogenic configuration for each individual. Storing these traces enables useful summary statistics --- for example the expected number of explained cases -- to be computed from the output. However, users may only be interested in the probability of association, at least in the first application. In this case, the arguments \texttt{return\_x\_trace} and \texttt{return\_z\_trace} can be set to \texttt{FALSE} when calling \texttt{bevimed\_m} in order to conserve memory, but still allow the evidence and probabilities of association to be computed.
+By default the function \texttt{bevimed\_m} stores the complete set of samples drawn during the MCMC process (after burn-in samples are removed) and therefore this function typically uses lots of memory. The vast majority of memory usage is expended storing the trace of samples of $z$, the indicator of pathogenicity for each variant) and $x$, the indicator of having a pathogenic configuration for each individual. Storing these traces enables useful summary statistics --- for example the expected number of explained cases --- to be computed from the output. However, users may only be interested in the probability of association, at least in the first application. In this case, the arguments \texttt{return\_x\_trace} and \texttt{return\_z\_trace} can be set to \texttt{FALSE} when calling \texttt{bevimed\_m} in order to conserve memory, but still allow the evidence and probabilities of association to be computed.
 
-The inference functions \texttt{bevimed\_m}, \texttt{bevimed} and \texttt{bevimed\_polytomous} always sample from the posterior distribution of pathogenicity of each variant represented in allele count matrix $G$. However, often $G$ does not all contain information about whether all variants represented are pathogenic. This occurs when alleles for the variant are either not observed (i.e. the allele count is zero for all individuals) or when alleles for variant are only present in individuals whose total allele count is less than their ploidy. The function \texttt{subset\_variants} can be used to remove such variants, returning either a transformed matrix or the indices of the remaining variants within the original set. Typically, $G$ would only contain variants which were observed in at least one of the individuals, so using this function \emph{a priori} is not likely to result in a speed up when applied conditioning on dominant inheritance, but often only a relatively small number of variants are observed are observed in compound heterozygotes/homozygotes and therefore is likely to result in a speed up conditioning on recessive inheritance.
+The inference functions \texttt{bevimed\_m}, \texttt{bevimed} and \texttt{bevimed\_polytomous} always sample from the posterior distribution of pathogenicity of each variant represented in allele count matrix $G$. 
+However, $G$ does not necessarily contain data relevant to pathogenicity for all variants which are represented in it. 
+This occurs when the allele counts for a variant are zero for all individuals, or when conditioning on recessive inheritance and alleles for the variant are only present for individuals whose total allele count is less than their ploidy. The function \texttt{subset\_variants} can be used to remove such variants, returning either a transformed matrix or the indices of the variants in the original set for which there is data relevant to pathogenicity in $G$. Typically, $G$ would only contain variants which were observed in at least one of the individuals, so using this function \emph{a priori} is not likely to result in a speed up when applied conditioning on dominant inheritance, as no variants would be removed. 
+However, it is often the case that only a small number of variants are observed in compound heterozygotes/homozygotes, so it is likely to result in a speed up conditioning on recessive inheritance.
 
 \begin{thebibliography}{10}
 
@@ -201,13 +206,13 @@ The inference functions \texttt{bevimed\_m}, \texttt{bevimed} and \texttt{bevime
 Greene D, NIHR BioResource, Richardson S, Turro E.
 \newblock (2017).
 \newblock {A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases}.
-\newblock Am. J. Hum. Genet. doi: 10.1016/j.ajhg.2017.05.015.
+\newblock American Journal of Human Genetics, 101(1):104--114. doi: 10.1016/j.ajhg.2017.05.015.
 
 \bibitem{cadd}
 Kircher M, Witten DM, Jain P, O'Roak BJ, Cooper GM, Shendure J.
 \newblock (2014).
 \newblock {A general framework for estimating the relative pathogenicity of human genetic variants}.
-\newblock Nat Genet. Feb 2. doi: 10.1038/ng.2892.
+\newblock Nature Genetics, 46(3):310--315. doi: 10.1038/ng.2892.
 
 \end{thebibliography}
 

@@ -9,13 +9,16 @@ citEntry(entry = "Article",
 				   as.person("Ernest Turro")),
   journal      = "American Journal of Human Genetics",
   year         = "2017",
+  volume="101",
+  number="1",
+  pages="104--114",
   doi = "10.1016/j.ajhg.2017.05.015",
   publisher	= "{Elsevier}",
 
   textVersion  =
 	  paste("Greene D, NIHR BioResource, Richardson S and Turro E (2017).",
 		  "A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases.",
-		  "Am. J. Hum. Genet. doi: 10.1016/j.ajhg.2017.05.015.")
+		  "American Journal of Human Genetics, 101(1):104-114.")
 )
 
 

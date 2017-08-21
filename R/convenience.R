@@ -252,7 +252,8 @@ prob_association <- function(
 }
 
 variant_marginals <- function(var_probs_by_model, variant_sets, k) {
-	apply(mapply(
+	if (k == 0) numeric(0)
+	else apply(matrix(nrow=k, ncol=length(variant_sets), data=mapply(
 		SIMPLIFY=TRUE,
 		FUN=function(probs, inds) {
 			p <- rep(0, k)
@@ -261,7 +262,7 @@ variant_marginals <- function(var_probs_by_model, variant_sets, k) {
 		},
 		var_probs_by_model,
 		variant_sets
-	), 1, sum)
+	)), 1, sum)
 }
 
 #' @title Extract variant marginal probabilities of pathogenicity

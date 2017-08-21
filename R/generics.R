@@ -132,18 +132,17 @@ print.BeviMed_summary <- function(x, print_prob_pathogenic=TRUE, ...) {
 	cat(dashed, "\n")
 	cat("Posterior probability of association: \n\t", round(sum(x[["prob_association"]]), digits=3), " [prior: ", round(sum(x[["prior_prob_association"]]), digits=3), "]\n", sep="")
 
-	cat("Posterior probability of dominance given association: \n\t", round(sum(x[["prob_association"]][x[["moi"]]=="dominant"])/sum(x[["prob_association"]]), digits=3), " [prior: ", round(sum(x[["prior_prob_association"]][x[["moi"]]=="dominant"])/sum(x[["prior_prob_association"]]), digits=3), "]\n", sep="")
+	cat(dashed, "\n")
 
 	model_names <- if (!is.null(names(x[["prob_association"]]))) names(x[["prob_association"]]) else seq(length.out=length(x[["prob_association"]]))
-
-	cat(dashed, "\n")
 
 	summary_mat <- data.frame(
 		check.names=FALSE,
 		stringsAsFactors=FALSE,
 		Model=model_names,
-		`Post`=x[["prob_association"]]/sum(x[["prob_association"]]),
+		`MOI`=substr(x[["moi"]], 1, 3),
 		`Prior`=x[["prior_prob_association"]]/sum(x[["prior_prob_association"]]),
+		`Post`=x[["prob_association"]]/sum(x[["prob_association"]]),
 		`Cases`=sapply(x[["models"]], function(m) { ee <- "expected_explained"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } }),
 		`Variants`=sapply(x[["models"]], function(m) { ee <- "explaining_variants"; if (ee %in% names(m)) { if (is.null(m[[ee]])) NA else m[[ee]] } else { NA } })
 	)[order(x[["prob_association"]], decreasing=TRUE),]
@@ -151,27 +150,32 @@ print.BeviMed_summary <- function(x, print_prob_pathogenic=TRUE, ...) {
 	print(row.names=FALSE, digits=3, summary_mat)
 
 	cat("\n")
-	cat("Post: posterior probability of model given association\n")
+	cat("MOI: mode of inheritance, dominant (dom) or recessive (rec)\n")
 	cat("Prior: prior probability of model given association\n")
+	cat("Post: posterior probability of model given association\n")
 	cat("Cases: posterior expected number of cases explained\n")
 	cat("Variants: posterior expected number of variants involved in explained cases\n")
 	cat(dashed, "\n")
 	if (print_prob_pathogenic) {
-		cat("Probabilities of pathogenicity for individual variants\n\n")
+		if (x[["k"]] > 0) {
+			cat("Probabilities of pathogenicity for individual variants given association\n\n")
 
-		patho <- variant_marginals(Map(f="*", lapply(x[["models"]], "[[", "conditional_prob_pathogenic"), x[["prob_association"]]), x[["variant_sets"]], x[["k"]])/sum(x[["prob_association"]])
-		patho_names <- if (!is.null(x[["variant_names"]])) x[["variant_names"]] else seq_along(patho)
+			patho <- variant_marginals(Map(f="*", lapply(x[["models"]], "[[", "conditional_prob_pathogenic"), x[["prob_association"]]), x[["variant_sets"]], x[["k"]])/sum(x[["prob_association"]])
+			patho_names <- if (!is.null(x[["variant_names"]])) x[["variant_names"]] else seq_along(patho)
 
-		patho_rounded <- lapply(patho, function(vals) sprintf("%.2f", vals))
+			patho_rounded <- lapply(patho, function(vals) sprintf("%.2f", vals))
 
-		bar_width <- 17
-		print(row.names=FALSE, data.frame(
-			check.names=FALSE,
-			stringsAsFactors=FALSE,
-			Var=substr(patho_names, 1, 22),
-			`Probability pathogenic`=sapply(seq(length.out=length(patho)), function(j) paste0("[", patho_rounded[j], " ", paste0(collapse="", rep("=", as.integer(round(patho[j]*bar_width, digits=0L)))), paste0(collapse="", rep(" ", bar_width-as.integer(round(patho[j]*bar_width, digits=0L)))), "]"))
-		))
+			bar_width <- 17
+			print(row.names=FALSE, data.frame(
+				check.names=FALSE,
+				stringsAsFactors=FALSE,
+				Var=substr(patho_names, 1, 22),
+				`Probability pathogenic`=sapply(seq(length.out=length(patho)), function(j) paste0("[", patho_rounded[j], " ", paste0(collapse="", rep("=", as.integer(round(patho[j]*bar_width, digits=0L)))), paste0(collapse="", rep(" ", bar_width-as.integer(round(patho[j]*bar_width, digits=0L)))), "]"))
+			))
 
+		} else {
+			cat("Specified models contain no variants\n")
+		}
 		cat(dashed, "\n")
 	}
 }
