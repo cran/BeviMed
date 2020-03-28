@@ -135,7 +135,7 @@ The user can control the prior distributions of the model parameters when applyi
 			\\ \text{log}\, \phi &\sim \text{N}(\mu_{\phi}, \sigma^2_{\phi}),
 		\end{align*}
 		where $\phi$ is the scaling factor for $c$. By default, $c$ is centralised on $0$ so that $\omega$ is interpretable as the global rate of pathogenicity in the locus, and $\phi$ has a mean of $1$, so $c_j$ is interpretable as a shift in the log odds on the prior probability of variant $j$ being pathogenic. 
-		Thus, one could for example of use the untransformed CADD phred score~\cite{cadd} for each variant as a weight.
+		Thus, one could for example of use the untransformed CADD Phred score~\cite{cadd} for each variant as a weight.
 		The raw values of $c$ as given in the \texttt{variant\_weights} arguments will be used if the parameter \texttt{standardise\_weights} is set to \texttt{FALSE}. The hyper parameters $\mu_{\phi}$ and $\sigma_{\phi}$ for the prior distribution of $\log \phi$ are respectively represented by arguments \texttt{log\_phi\_mean} and \texttt{log\_phi\_sd}. Hyper parameters for $\omega$ and $\phi$ and the values for $c$ can be passed to functions \texttt{bevimed} and \texttt{bevimed\_m}. 
 
 		Estimating the scaling factor $\phi$ in this way has the advantage of maintaining power even when the weights are counter-productive, as $\phi$ can take values close to $0$ making the weights redundant. However, it is possible to make the effect of variant weights $c$ fixed by setting the parameter \texttt{estimate\_phi} to \texttt{FALSE}, in which case $\phi$ is fixed at $1$. 
@@ -169,7 +169,7 @@ results <- mclapply(
 	mc.cores=16L,
 	X=chr1genes$gene,
 	FUN=function(gene) {
-		G <- all_variants$G[variant_inds[[gene]],,drop=FALSE]
+		G <- all_variants$G[row_indices_per_gene[[gene]],,drop=FALSE]
 		c(
 			list(gene=gene), 
 			summary(bevimed(y=y, G=G))) })

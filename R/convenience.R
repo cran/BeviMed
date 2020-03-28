@@ -54,10 +54,8 @@ bevimed <- function(
 	)
 }
 
-#' Calculate marginal probability of observed case-control status y under model gamma = 0
-#' 
-#' Marginal probability calculated exactly by integration.
-#'
+#' @title Calculate marginal probability of observed case-control status y under model gamma = 0
+#' @description Marginal probability calculated exactly by integration.
 #' @template y
 #' @param tau0_shape Beta shape hyper-priors for prior on rate of case labels
 #' @return Log marginal likelihood.
@@ -155,7 +153,7 @@ extract_explaining_variants <- function(x) {
 	))
 }
 
-#' Calculate expected number of pathogenic variants in cases
+#' @title Calculate expected number of pathogenic variants in cases
 #'
 #' @description Use \code{\link{bevimed_m}} to perform inference under model gamma = 1 and return only the expected number of pathogenic variants in cases.
 #'
@@ -383,8 +381,7 @@ bevimed_polytomous <- function(
 		list(
 			parameters=list(
 				tau0_shape=tau0_shape,
-				prior_prob_association=setNames(nm=names(variant_sets), prior_prob_association)
-				,
+				prior_prob_association=setNames(nm=names(variant_sets), prior_prob_association),
 				ploidy=ploidy,
 				y=y,
 				G=G,

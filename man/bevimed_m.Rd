@@ -13,15 +13,15 @@ bevimed_m(y, G, min_ac = 1L, tau_shape = c(1, 1), pi_shape = c(6, 1),
   optimise_z0 = FALSE, tune_omega_and_phi_proposal_sd = FALSE,
   tune_block_size = 100, variant_weights = NULL,
   standardise_weights = TRUE, log_phi_mean = -0.15,
-  log_phi_sd = sqrt(0.3), tandem_variant_updates = if (max(min_ac) == 1) 0
-  else min(sum(y), ncol(G)), ...)
+  log_phi_sd = sqrt(0.3), tandem_variant_updates = if (max(min_ac) ==
+  1) 0 else min(sum(y), ncol(G)), ...)
 }
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
 
 \item{G}{Integer matrix of variant counts per individual, one row per individual and one column per variant.}
 
-\item{min_ac}{Numeric vector of length the same as \code{y} or length \code{1} (in which case it is repeated to make it the same length as \code{y}) giving the minimum number of alleles at pathogenic variant sites each individual requires in order to classify as having a `pathogenic allele configuration'. If For example, \code{1} could correspond to hypothesis of dominant inheritance hypothesis. If there are differences in ploidy between individuals in the locus, it is necessary to set it on an sample level basis - e.g. to incorporate information about gender if the locus lies on the X chromosome.}
+\item{min_ac}{Integer vector with a length equalling the number of individuals or length \code{1} (in which case the given value is used for all individuals) giving the minimum number of alleles at pathogenic variant sites each individual requires in order to classify as having a `pathogenic allele configuration'. Thus, this parameter encodes the mode of inheritance. For instance, setting this parameter to \code{1} corresponds to dominant inheritance. If there are differences in ploidy between individuals in the locus, it is necessary to set it on an sample level basis - e.g. to ensure sex is accounted for if the locus lies on the X chromosome.}
 
 \item{tau_shape}{Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with non-pathogenic variant combinations (i.e. they have less than \code{min_ac} variants.}
 

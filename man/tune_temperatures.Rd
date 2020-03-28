@@ -4,7 +4,8 @@
 \alias{tune_temperatures}
 \title{Tune temperatures}
 \usage{
-tune_temperatures(number_of_temperatures, return_temperatures = FALSE, ...)
+tune_temperatures(number_of_temperatures, return_temperatures = FALSE,
+  ...)
 }
 \arguments{
 \item{number_of_temperatures}{Integer value giving number of tuned temperatures (including 0 and 1) to obtain.}

@@ -9,7 +9,7 @@ prob_association_m(y, min_ac = 1L, prior_prob_association = 0.01, ...)
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
 
-\item{min_ac}{Numeric vector of length the same as \code{y} or length \code{1} (in which case it is repeated to make it the same length as \code{y}) giving the minimum number of alleles at pathogenic variant sites each individual requires in order to classify as having a `pathogenic allele configuration'. If For example, \code{1} could correspond to hypothesis of dominant inheritance hypothesis. If there are differences in ploidy between individuals in the locus, it is necessary to set it on an sample level basis - e.g. to incorporate information about gender if the locus lies on the X chromosome.}
+\item{min_ac}{Integer vector with a length equalling the number of individuals or length \code{1} (in which case the given value is used for all individuals) giving the minimum number of alleles at pathogenic variant sites each individual requires in order to classify as having a `pathogenic allele configuration'. Thus, this parameter encodes the mode of inheritance. For instance, setting this parameter to \code{1} corresponds to dominant inheritance. If there are differences in ploidy between individuals in the locus, it is necessary to set it on an sample level basis - e.g. to ensure sex is accounted for if the locus lies on the X chromosome.}
 
 \item{prior_prob_association}{The prior probability of association.}
 

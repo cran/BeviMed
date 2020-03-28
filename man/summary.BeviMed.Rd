@@ -15,12 +15,12 @@
 Object of class \code{BeviMed_summary}.
 }
 \description{
-Create a summary of inference over model gamma = 0 and model gamma = 1 conditional on each mode of inheritance.
+Create a summary of inference over model gamma = 0 and association models.
 }
 \details{
 Returns a \code{BeviMed_summary} object, which is a list containing elements:
 \itemize{
-\item `prob_association`: the probability of association under each mode of inheritance,
+\item `prob_association`: the probability of association under each association model,
 \item `prior_prob_association`: the prior probability of association for each association model,
 \item `gamma0_evidence': the log evidence under model gamma = 0,
 \item `models': a list of summaries of model conditional inferences, i.e. objects of class \code{BeviMed_m_summary}. See \code{\link{summary.BeviMed_m}} for more details.

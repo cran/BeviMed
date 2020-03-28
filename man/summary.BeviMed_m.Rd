@@ -4,8 +4,8 @@
 \alias{summary.BeviMed_m}
 \title{Summarise a \code{BeviMed_m} object}
 \usage{
-\method{summary}{BeviMed_m}(object, confidence = 0.95, simulations = 1000,
-  ...)
+\method{summary}{BeviMed_m}(object, confidence = 0.95,
+  simulations = 1000, ...)
 }
 \arguments{
 \item{object}{Object of class \code{BeviMed_m}. See function \code{\link{bevimed_m}}.}
@@ -37,7 +37,7 @@ Returns a \code{BeviMed_m_summary} object, which is a list containing elements:
 \item `phi_estimated': logical value indicating whether the parameter phi was estimated,
 \item `phi': the posterior mean of phi,
 \item `phi_acceptance_rate': if phi was estimated, the rate of acceptance of proposed phi values in the Metropolis-Hastings sampling routine, 
-\item `N`: number of cases in the analysis,
+\item `N`: number of samples in the analysis,
 \item `k`: number of variants in the analysis,
 \item `variant_counts': list of counts of each variant for cases and controls,
 \item `temperatures': numeric vector of temperatures used as temperatures for tempered MCMC chains 

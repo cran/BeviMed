@@ -124,18 +124,6 @@ List bevimed_mc(
 		p_tot_tab[i] = p_tot_tab[i-1] + log(i-1 + pi_shape1 + pi_shape2);
 	}
 
-	NumericVector z_shape1_gamma_table(k+1);
-	NumericVector z_shape2_gamma_table(k+1);
-	NumericVector z_total_gamma_table(k+1);
-	z_shape1_gamma_table[0] = 0.0;
-	z_shape2_gamma_table[0] = 0.0;
-	z_total_gamma_table[0] = 0.0;
-	for (int v = 0; v <= k; v++) {
-		z_shape1_gamma_table[v] = z_shape1_gamma_table[v-1] + log(v-1 + z_shape1);
-		z_shape2_gamma_table[v] = z_shape2_gamma_table[v-1] + log(v-1 + z_shape2);
-		z_total_gamma_table[v] = z_total_gamma_table[v-1] + log(v-1 + z_shape1 + z_shape2);
-	}
-
 	for (int it = 0; it < its; it++) {
 		double annealing_factor = annealing ? (double)(its-it) : 1.0;
 		for (int chain_number = 0; chain_number < num_temps; chain_number++) {

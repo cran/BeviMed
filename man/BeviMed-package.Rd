@@ -19,16 +19,6 @@ Maintainer: Daniel Greene <dg333@cam.ac.uk>
 \references{
 Greene et al., A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases, The American Journal of Human Genetics (2017), http://dx.doi.org/10.1016/j.ajhg.2017.05.015.
 }
-\keyword{ package, statistical association test, Bayesian inference, rare disease  }
 \seealso{
   \code{\link{bevimed}}
-}
-\examples{
-# generate random allele count matrix for 10 individuals at 5 rare variant sites
-G <- matrix(rbinom(n=50, size=2, prob=0.1), nrow=10, ncol=5)
-# generate case/control label whereby individuals with any alleles in the first 
-# three variants are labelled cases
-y <- apply(G[,1:3], 1, sum) > 0
-# apply BeviMed
-bevimed(y=y, G=G)
 }

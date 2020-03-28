@@ -20,7 +20,7 @@
 #' \item `phi_estimated': logical value indicating whether the parameter phi was estimated,
 #' \item `phi': the posterior mean of phi,
 #' \item `phi_acceptance_rate': if phi was estimated, the rate of acceptance of proposed phi values in the Metropolis-Hastings sampling routine, 
-#' \item `N`: number of cases in the analysis,
+#' \item `N`: number of samples in the analysis,
 #' \item `k`: number of variants in the analysis,
 #' \item `variant_counts': list of counts of each variant for cases and controls,
 #' \item `temperatures': numeric vector of temperatures used as temperatures for tempered MCMC chains 
@@ -81,13 +81,13 @@ summary.BeviMed_m <- function(object, confidence=0.95, simulations=1000, ...) {
 
 #' Summarise a \code{BeviMed} object
 #'
-#' Create a summary of inference over model gamma = 0 and model gamma = 1 conditional on each mode of inheritance. 
+#' Create a summary of inference over model gamma = 0 and association models. 
 #'
 #' @param object Object of class \code{BeviMed}.
 #' @param ... Arguments passed to \code{summary.BeviMed_m}.
 #' @details Returns a \code{BeviMed_summary} object, which is a list containing elements:
 #' \itemize{
-#' \item `prob_association`: the probability of association under each mode of inheritance,
+#' \item `prob_association`: the probability of association under each association model,
 #' \item `prior_prob_association`: the prior probability of association for each association model,
 #' \item `gamma0_evidence': the log evidence under model gamma = 0,
 #' \item `models': a list of summaries of model conditional inferences, i.e. objects of class \code{BeviMed_m_summary}. See \code{\link{summary.BeviMed_m}} for more details.

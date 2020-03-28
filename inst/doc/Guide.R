@@ -56,7 +56,7 @@ bevimed_polytomous(y=G[,1] > 0, G=G, variant_sets=list(`first`=1, `all`=1:ncol(G
 #  	mc.cores=16L,
 #  	X=chr1genes$gene,
 #  	FUN=function(gene) {
-#  		G <- all_variants$G[variant_inds[[gene]],,drop=FALSE]
+#  		G <- all_variants$G[row_indices_per_gene[[gene]],,drop=FALSE]
 #  		c(
 #  			list(gene=gene),
 #  			summary(bevimed(y=y, G=G))) })
