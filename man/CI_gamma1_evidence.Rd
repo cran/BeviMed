@@ -4,8 +4,12 @@
 \alias{CI_gamma1_evidence}
 \title{Estimate confidence interval for estimated marginal likelihood}
 \usage{
-CI_gamma1_evidence(temperatures, y_log_lik_t_equals_1_traces,
-  confidence = 0.95, simulations = 1000)
+CI_gamma1_evidence(
+  temperatures,
+  y_log_lik_t_equals_1_traces,
+  confidence = 0.95,
+  simulations = 1000
+)
 }
 \arguments{
 \item{temperatures}{Numeric vector of temperatures of power posteriors. One chain will be created for each element of the vector at the corresponding temperature.}

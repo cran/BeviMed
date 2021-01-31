@@ -439,6 +439,7 @@ to_var_tab <- function(G_args) {
 #' @export
 #' @importFrom stats rnorm runif rbeta sd
 #' @importFrom methods is
+#' @importFrom Matrix rowSums
 #' @seealso \code{\link{bevimed_m}}, \code{\link{prob_association_m}}
 #' @template paper
 bevimed_m <- function(
@@ -494,9 +495,9 @@ bevimed_m <- function(
 		
 	G_args <- get_G_args(G)
 
-	G_logical <- matrix(data=G > 0, nrow=nrow(G), ncol=ncol(G))
-	comphet_cases <- apply(G_logical, 1, sum) > 1
-	comphet_variants <- lapply(split(G_logical[comphet_cases,,drop=FALSE], seq(length.out=sum(comphet_cases))), which)
+	G_logical <- G > 0
+	comphet_cases <- rowSums(G_logical) > 1L
+	comphet_variants <- lapply(split(as.matrix(G_logical[comphet_cases,,drop=FALSE]), seq(length.out=sum(comphet_cases))), which)
 	comphet_block_ends <- unname(cumsum(lapply(comphet_variants, length)))
 	comphet_block_starts <- if (length(comphet_block_ends) > 0) c(0, comphet_block_ends[-length(comphet_block_ends)]) else integer(0)
 	adjusted_tvu <- if (sum(comphet_cases) > 0) tandem_variant_updates else 0

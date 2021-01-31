@@ -1,4 +1,4 @@
-## ----setup,echo=FALSE,results='hide',include=FALSE, cache=FALSE----------
+## ----setup,echo=FALSE,results='hide',include=FALSE, cache=FALSE---------------
 library(knitr)
 theme <- list(
 	highlight=paste0(collapse="\n", c(
@@ -35,16 +35,16 @@ k_patho <- 3
 z <- c(rep(TRUE, k_patho), rep(FALSE, k-k_patho))
 y <- apply(G[,z,drop=FALSE], 1, sum) > 0
 
-## ----simple, echo=TRUE---------------------------------------------------
+## ----simple, echo=TRUE--------------------------------------------------------
 obj <- bevimed(y=y, G=G)
 
-## ----print, echo=TRUE----------------------------------------------------
+## ----print, echo=TRUE---------------------------------------------------------
 obj
 
-## ----polytomous, echo=TRUE-----------------------------------------------
+## ----polytomous, echo=TRUE----------------------------------------------------
 bevimed_polytomous(y=G[,1] > 0, G=G, variant_sets=list(`first`=1, `all`=1:ncol(G)))
 
-## ----multiple, eval=FALSE, echo=TRUE-------------------------------------
+## ----multiple, eval=FALSE, echo=TRUE------------------------------------------
 #  source(paste0(system.file(package="BeviMed", "/scripts/vcf.R")))
 #  all_variants <- vcf2matrix("my-vcf.vcf.gz", chr="1", from=1, to=1e9, include_variant_info=TRUE)
 #  row_indices_per_gene <- lapply(1:nrow(chr1genes), function(i) {

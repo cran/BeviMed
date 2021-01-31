@@ -8,9 +8,6 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\usepackage[utf8]{inputenc}
 ---
-```{r echo=FALSE}
-knitr::opts_chunk$set(dev="svg", fig.width=7, fig.height=7)
-```
 
 The `BeviMed` package comes with a script containing functions to simplify reading allele count matrices from VCF files. The functions depend on `tabix`, but have the advantage of allowing variants in local regions to be read in, reducing the amount of memory consumed at any one time. However, if you want to analyse many regions, it may be more efficient to read in larger parts of the file - in which case, a package such as `vcfR` might be more appropriate. 
 

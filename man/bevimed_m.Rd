@@ -4,17 +4,33 @@
 \alias{bevimed_m}
 \title{Perform inference under model gamma = 1 conditional on mode of inheritance}
 \usage{
-bevimed_m(y, G, min_ac = 1L, tau_shape = c(1, 1), pi_shape = c(6, 1),
+bevimed_m(
+  y,
+  G,
+  min_ac = 1L,
+  tau_shape = c(1, 1),
+  pi_shape = c(6, 1),
   omega_shape = if (max(min_ac) == 1L) c(2, 8) else c(2, 2),
-  samples_per_chain = 1000, stop_early = FALSE, blocks = 5,
-  burn = as.integer(samples_per_chain/10), temperatures = (0:6/6)^2,
-  tune_temps = 0, return_z_trace = TRUE, return_x_trace = TRUE,
-  raw_only = FALSE, swaps = as.integer(length(temperatures)/2),
-  optimise_z0 = FALSE, tune_omega_and_phi_proposal_sd = FALSE,
-  tune_block_size = 100, variant_weights = NULL,
-  standardise_weights = TRUE, log_phi_mean = -0.15,
-  log_phi_sd = sqrt(0.3), tandem_variant_updates = if (max(min_ac) ==
-  1) 0 else min(sum(y), ncol(G)), ...)
+  samples_per_chain = 1000,
+  stop_early = FALSE,
+  blocks = 5,
+  burn = as.integer(samples_per_chain/10),
+  temperatures = (0:6/6)^2,
+  tune_temps = 0,
+  return_z_trace = TRUE,
+  return_x_trace = TRUE,
+  raw_only = FALSE,
+  swaps = as.integer(length(temperatures)/2),
+  optimise_z0 = FALSE,
+  tune_omega_and_phi_proposal_sd = FALSE,
+  tune_block_size = 100,
+  variant_weights = NULL,
+  standardise_weights = TRUE,
+  log_phi_mean = -0.15,
+  log_phi_sd = sqrt(0.3),
+  tandem_variant_updates = if (max(min_ac) == 1) 0 else min(sum(y), ncol(G)),
+  ...
+)
 }
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}

@@ -4,11 +4,22 @@
 \alias{stop_chain}
 \title{Apply the MCMC algorithm in blocks until conditions are met}
 \usage{
-stop_chain(y, blocks_remaining, start_zs, start_logit_omegas,
-  start_log_phis, temperatures, tolerance = 1, confidence = 0.95,
-  simulations = 1000, log_evidence_threshold = -Inf,
-  y_log_lik_t_equals_1_traces = matrix(ncol = length(temperatures), nrow
-  = 0), full_block_traces = list(), verbose = FALSE, ...)
+stop_chain(
+  y,
+  blocks_remaining,
+  start_zs,
+  start_logit_omegas,
+  start_log_phis,
+  temperatures,
+  tolerance = 1,
+  confidence = 0.95,
+  simulations = 1000,
+  log_evidence_threshold = -Inf,
+  y_log_lik_t_equals_1_traces = matrix(ncol = length(temperatures), nrow = 0),
+  full_block_traces = list(),
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}

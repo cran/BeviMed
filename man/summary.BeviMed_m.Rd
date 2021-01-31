@@ -4,8 +4,7 @@
 \alias{summary.BeviMed_m}
 \title{Summarise a \code{BeviMed_m} object}
 \usage{
-\method{summary}{BeviMed_m}(object, confidence = 0.95,
-  simulations = 1000, ...)
+\method{summary}{BeviMed_m}(object, confidence = 0.95, simulations = 1000, ...)
 }
 \arguments{
 \item{object}{Object of class \code{BeviMed_m}. See function \code{\link{bevimed_m}}.}

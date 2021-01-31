@@ -4,10 +4,17 @@
 \alias{tune_proposal_sds}
 \title{Tune proposal standard deviation for MH sampled parameters}
 \usage{
-tune_proposal_sds(tune_for = c("logit_omega"), initial_proposal_sds,
-  target_acceptance_range = c(0.3, 0.7), other_param_proposal_sd = 0.7,
-  max_tuning_cycles = 10, initial_rate = 1, rate_decay = 1.2,
-  verbose = FALSE, ...)
+tune_proposal_sds(
+  tune_for = c("logit_omega"),
+  initial_proposal_sds,
+  target_acceptance_range = c(0.3, 0.7),
+  other_param_proposal_sd = 0.7,
+  max_tuning_cycles = 10,
+  initial_rate = 1,
+  rate_decay = 1.2,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{tune_for}{Character vector of length one, naming which variable to tune the proposal SDs for: either \code{"logit_omega"} or \code{"log_phi"}.}

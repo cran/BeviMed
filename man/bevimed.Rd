@@ -4,9 +4,16 @@
 \alias{bevimed}
 \title{Bayesian Evaluation of Variant Involvement in Mendelian Disease}
 \usage{
-bevimed(y, G, ploidy = rep(2L, length(y)),
-  prior_prob_association = 0.01, prior_prob_dominant = 0.5,
-  dominant_args = NULL, recessive_args = NULL, ...)
+bevimed(
+  y,
+  G,
+  ploidy = rep(2L, length(y)),
+  prior_prob_association = 0.01,
+  prior_prob_dominant = 0.5,
+  dominant_args = NULL,
+  recessive_args = NULL,
+  ...
+)
 }
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}

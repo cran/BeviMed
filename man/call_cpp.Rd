@@ -4,14 +4,39 @@
 \alias{call_cpp}
 \title{R interface to BeviMed c++ MCMC procedure}
 \usage{
-call_cpp(samples_per_chain, y, block_starts, block_ends, cases, counts,
-  min_ac, tau_shape, pi_shape, omega_shape, temperatures, z0_matrix,
-  estimate_omega, logit_omegas, logit_omega_proposal_sds, variant_weights,
-  estimate_phi, log_phis, log_phi_mean, log_phi_sd, log_phi_proposal_sds,
-  chain_swaps_per_cycle, annealing, tandem_variant_updates,
-  comphet_variant_block_starts, comphet_variant_block_ends,
-  comphet_variants, return_z_trace, return_x_trace, burn = 0,
-  check = TRUE)
+call_cpp(
+  samples_per_chain,
+  y,
+  block_starts,
+  block_ends,
+  cases,
+  counts,
+  min_ac,
+  tau_shape,
+  pi_shape,
+  omega_shape,
+  temperatures,
+  z0_matrix,
+  estimate_omega,
+  logit_omegas,
+  logit_omega_proposal_sds,
+  variant_weights,
+  estimate_phi,
+  log_phis,
+  log_phi_mean,
+  log_phi_sd,
+  log_phi_proposal_sds,
+  chain_swaps_per_cycle,
+  annealing,
+  tandem_variant_updates,
+  comphet_variant_block_starts,
+  comphet_variant_block_ends,
+  comphet_variants,
+  return_z_trace,
+  return_x_trace,
+  burn = 0,
+  check = TRUE
+)
 }
 \arguments{
 \item{samples_per_chain}{Number of samples to draw from each chain.}

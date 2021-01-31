@@ -4,11 +4,17 @@
 \alias{bevimed_polytomous}
 \title{Model selection for multiple association models}
 \usage{
-bevimed_polytomous(y, G, ploidy = rep(2L, length(y)), variant_sets,
-  prior_prob_association = rep(0.01/length(variant_sets),
-  length(variant_sets)), tau0_shape = c(1, 1), moi = rep("dominant",
-  length(variant_sets)), model_specific_args = vector(mode = "list",
-  length = length(variant_sets)), ...)
+bevimed_polytomous(
+  y,
+  G,
+  ploidy = rep(2L, length(y)),
+  variant_sets,
+  prior_prob_association = rep(0.01/length(variant_sets), length(variant_sets)),
+  tau0_shape = c(1, 1),
+  moi = rep("dominant", length(variant_sets)),
+  model_specific_args = vector(mode = "list", length = length(variant_sets)),
+  ...
+)
 }
 \arguments{
 \item{y}{Logical vector of case (\code{TRUE}) control (\code{FALSE}) status.}
