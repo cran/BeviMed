@@ -34,6 +34,7 @@ call_cpp(
   comphet_variants,
   return_z_trace,
   return_x_trace,
+  vec_sums = FALSE,
   burn = 0,
   check = TRUE
 )
@@ -96,6 +97,8 @@ call_cpp(
 \item{return_z_trace}{Logical value determining whether to store the z-vectors for each chain, which uses alot of memory, particularly if \code{samples_per_chain}, k and \code{length(temperatures)} are large.}
 
 \item{return_x_trace}{Logical value determining whether to store the x variable determined by success samples of z. Potentially uses alot of memory, particularly if \code{samples_per_chain}, k and \code{length(temperatures)} are large.}
+
+\item{vec_sums}{Logical value determining whether to calculate vector summary statistics.}
 
 \item{burn}{Number of samples to drop from the start of the chain.}
 

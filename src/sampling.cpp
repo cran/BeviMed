@@ -2,6 +2,7 @@
 
 List bevimed_mc(
 	int its,
+	int burn,
 	LogicalVector y,
 	IntegerVector var_block_start_index,
 	IntegerVector var_block_stop_index,
@@ -31,11 +32,13 @@ List bevimed_mc(
 	IntegerVector tandem_case_block_start_index,
 	IntegerVector tandem_case_block_stop_index,
 	IntegerVector tandem_variants,
+	bool vec_sums,
 	bool return_z_trace,
 	bool return_x_trace
 ) {
 	double logit_z_rate_mean = z_shape1;
 	double logit_z_rate_sd = z_shape2;
+	double inc = 1.0/(double)(its-burn);
 
 	int n = y.length();
 
@@ -49,6 +52,15 @@ List bevimed_mc(
 		chain_temperature_reference[temp] = temp;
 		temperature_chain_reference[temp] = temp;
 	}
+
+	NumericVector var_patho(k, 0.0);
+	NumericVector var_expl(k, 0.0);
+	NumericVector case_expl(n, 0.0);
+	int sum_y = 0;
+	for (int i = 0; i < n; i++) sum_y += (int)y[i];
+	IntegerVector case_inds(sum_y);
+	int curs = 0;
+	for (int i = 0; i < n; i++) if (y[i]) case_inds[curs++] = i;
 
 	LogicalMatrix z_trace(return_z_trace ? its : 0, return_z_trace ? (k * num_temps) : 0);
 	LogicalMatrix x_trace(return_x_trace ? its : 0, return_x_trace ? n : 0);
@@ -563,6 +575,20 @@ List bevimed_mc(
 				x_trace(it, samp) = x(temperature_chain_reference[num_temps-1], samp);
 			}
 		}
+		if (vec_sums && it >= burn) {
+			int chn = temperature_chain_reference[num_temps-1];
+			for (int v = 0; v < k; v++) {
+				if (z_trace(it, chn * k + v)) var_patho[v] += inc * z(chn, v);
+				bool expl = false;
+				for (int i = var_block_start_index[v]; i < var_block_stop_index[v]; i++) {
+					expl |= (y[cases[i]] && x(chn, cases[i]));
+				}
+				if (expl) var_expl[v] += inc;
+			}
+			for (int ci = 0; ci < sum_y; ci++) {
+				case_expl[case_inds[ci]] += inc * x(chn, case_inds[ci]);
+			}
+		}
 	}
 
 	LogicalMatrix terminal_z(num_temps, k);
@@ -585,6 +611,12 @@ List bevimed_mc(
 			Named("x")=x_trace,
 			Named("logit_omega")=logit_z_rates_trace,
 			Named("log_phi")=log_phis_trace
+		),
+		Named("aggregates")=List::create(
+			Named("vec_sums")=vec_sums,
+			Named("case_expl")=case_expl,
+			Named("var_expl")=var_expl,
+			Named("var_patho")=var_patho
 		),
 		Named("swaps")=List::create(
 			Named("accept")=swap_accept_trace,

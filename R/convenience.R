@@ -110,9 +110,11 @@ gamma1_evidence <- function(
 #' @seealso \code{\link{expected_explained}}, \code{\link{bevimed_m}}
 extract_expected_explained <- function(x) {
 	stopifnot(class(x) == "BeviMed_m")
-	if (("x" %in% names(x[["traces"]]))*dim(x[["traces"]][["x"]])[1] == 0)
-		stop("Must make sure to set 'return_x_trace=TRUE' in call to 'bevimed_m' to use this function")
-	mean(apply(x$traces$x[,x$parameters$y,drop=FALSE], 1, sum))
+	if (x[["aggregates"]][["vec_sums"]]) { sum(x[["aggregates"]][["case_expl"]]) } else {
+		if (("x" %in% names(x[["traces"]]))*dim(x[["traces"]][["x"]])[1] == 0)
+			stop("Must make sure to set 'return_x_trace=TRUE' in call to 'bevimed_m' to use this function")
+		mean(apply(x$traces$x[,x$parameters$y,drop=FALSE], 1, sum))
+	}
 }
 
 #' @title Calculate expected number of explained cases
@@ -140,17 +142,19 @@ expected_explained <- function(...) {
 #' @seealso \code{\link{explaining_variants}}, \code{\link{bevimed_m}}
 extract_explaining_variants <- function(x) {
 	stopifnot(class(x) == "BeviMed_m")
-	if (("z" %in% names(x[["traces"]]))*dim(x[["traces"]][["z"]])[1] == 0)
-		stop("Must make sure to set 'return_z_trace=TRUE' and 'return_x_trace=TRUE' in call to 'bevimed_m' to use this function")
-	G <- x$parameters$G
-	logicalG <- matrix(G > 0, nrow=nrow(G), ncol=ncol(G))
-	y <- x$parameters$y
-	mean(mapply(
-		SIMPLIFY=TRUE,
-		FUN=function(z, x) sum(apply(logicalG[y & x, z, drop=FALSE], 2, any)),
-		split(x$traces$z[,seq(to=ncol(x$traces$z), length.out=x$parameters$k),drop=FALSE], seq(length.out=nrow(x$traces$z))),
-		split(x$traces$x, seq(length.out=nrow(x$traces$z)))
-	))
+	if (x[["aggregates"]][["vec_sums"]]) { sum(x[["aggregates"]][["var_expl"]]) } else {
+		if (("z" %in% names(x[["traces"]]))*dim(x[["traces"]][["z"]])[1] == 0)
+			stop("Must make sure to set 'return_z_trace=TRUE' and 'return_x_trace=TRUE' in call to 'bevimed_m' to use this function")
+		G <- x$parameters$G
+		logicalG <- matrix(G > 0, nrow=nrow(G), ncol=ncol(G))
+		y <- x$parameters$y
+		mean(mapply(
+			SIMPLIFY=TRUE,
+			FUN=function(z, x) sum(apply(logicalG[y & x, z, drop=FALSE], 2, any)),
+			split(x$traces$z[,seq(to=ncol(x$traces$z), length.out=x$parameters$k),drop=FALSE], seq(length.out=nrow(x$traces$z))),
+			split(x$traces$x, seq(length.out=nrow(x$traces$z)))
+		))
+	}
 }
 
 #' @title Calculate expected number of pathogenic variants in cases
@@ -314,7 +318,10 @@ t1_z_trace <- function(x) {
 #' @export
 #' @seealso \code{\link{conditional_prob_pathogenic}}, \code{\link{bevimed_m}}
 extract_conditional_prob_pathogenic <- function(x) {
-	if (x[["parameters"]][["k"]] == 0) numeric(0) else apply(t1_z_trace(x), 2, mean)
+	if (x[["parameters"]][["k"]] == 0) { numeric(0) } else {
+		if (x[["aggregates"]][["vec_sums"]]) { x[["aggregates"]][["var_patho"]] } 
+		else { apply(t1_z_trace(x), 2, mean) }
+	}
 }
 
 #' Calculate probability of pathogencity for variants conditional on mode of inheritance.

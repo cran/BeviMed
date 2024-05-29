@@ -42,8 +42,8 @@ summary.BeviMed_m <- function(object, confidence=0.95, simulations=1000, ...) {
 	phi_estimated <- object[["parameters"]][["estimate_phi"]]
 	omega_estimated <- object[["parameters"]][["estimate_omega"]]
 
-	has_z <- dim(object[["traces"]][["z"]])[1] > 0
-	has_x <- dim(object[["traces"]][["x"]])[1] > 0
+	has_z <- object[["aggregates"]][["vec_sums"]] | dim(object[["traces"]][["z"]])[1] > 0
+	has_x <- object[["aggregates"]][["vec_sums"]] | dim(object[["traces"]][["x"]])[1] > 0
 
 	structure(list(
 		gamma1_evidence=gamma1_evidence,
@@ -63,7 +63,7 @@ summary.BeviMed_m <- function(object, confidence=0.95, simulations=1000, ...) {
 		omega=if (omega_estimated) { 
 			mean(1-1/(1+exp(object[["traces"]][["logit_omega"]][,num_temps]))) 
 		} else { 
-			if (has_z & all(object[["parameters"]][["c_weights"]] == 0)) {
+			if (dim(object[["traces"]][["z"]])[1] > 0 & all(object[["parameters"]][["c_weights"]] == 0)) {
 				sumZ <- apply(t1_z_trace(object),1,sum)
 				(object[["parameters"]][["omega_shape"]][1] + mean(sumZ))/sum(c(k,object[["parameters"]][["omega_shape"]]))
 			} else {

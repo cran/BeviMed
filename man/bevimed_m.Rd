@@ -17,6 +17,7 @@ bevimed_m(
   burn = as.integer(samples_per_chain/10),
   temperatures = (0:6/6)^2,
   tune_temps = 0,
+  vec_sums = FALSE,
   return_z_trace = TRUE,
   return_x_trace = TRUE,
   raw_only = FALSE,
@@ -56,6 +57,8 @@ bevimed_m(
 \item{temperatures}{Numeric vector of temperatures of power posteriors. One chain will be created for each element of the vector at the corresponding temperature.}
 
 \item{tune_temps}{Integer value - if greater than 0, the \code{temperatures} argument is ignored, and instead \code{tune_temps} tuned temperatures are used instead.}
+
+\item{vec_sums}{Logical value determining whether to calculate vector summary statistics.}
 
 \item{return_z_trace}{Logical value determining whether to store the z-vectors for each chain, which uses alot of memory, particularly if \code{samples_per_chain}, k and \code{length(temperatures)} are large.}
 

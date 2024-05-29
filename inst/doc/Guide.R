@@ -4,11 +4,11 @@ theme <- list(
 	highlight=paste0(collapse="\n", c(
 		"\\definecolor{fgcolor}{rgb}{0, 0, 0}",
 		"\\newcommand{\\hlnum}[1]{\\textcolor[rgb]{0,0,0}{#1}}%",
-		"\\newcommand{\\hlstr}[1]{\\textcolor[rgb]{0, 0, 0}{#1}}%",
+		"\\newcommand{\\hlsng}[1]{\\textcolor[rgb]{0, 0, 0}{#1}}%",
 		"\\newcommand{\\hlcom}[1]{\\textcolor[rgb]{0,0,0}{\\textit{#1}}}%",
 		# dollar
 		"\\newcommand{\\hlopt}[1]{\\textcolor[rgb]{0,0,0}{\\textbf{#1}}}%",
-		"\\newcommand{\\hlstd}[1]{\\textcolor[rgb]{0,0,0}{#1}}%",
+		"\\newcommand{\\hldef}[1]{\\textcolor[rgb]{0,0,0}{#1}}%",
 		# 'function'
 		"\\newcommand{\\hlkwa}[1]{\\textcolor[rgb]{0,0,0}{\\textbf{#1}}}%",
 		# assign to

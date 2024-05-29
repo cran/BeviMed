@@ -29,6 +29,7 @@
 #' @param comphet_variants Integer vector giving variant numbers (0-based, i.e. between 0 and k-1). Used to pick pairs of variants for tandem updates from.
 #' @template return_z_trace
 #' @template return_x_trace
+#' @template vec_sums
 #' @template burn
 #' @param check Logical value indicating whether to perform validation on the arguments before calling the c++ function. 
 #' @return Object of class \code{BeviMed_raw}, containing the output of the MCMC sampling.
@@ -64,6 +65,7 @@ call_cpp <- function(
 	comphet_variants,
 	return_z_trace,
 	return_x_trace,
+	vec_sums=FALSE,
 	burn=0,
 	check=TRUE
 ) {
@@ -87,6 +89,7 @@ call_cpp <- function(
 
 	raw <- bevimed_mc(
 		samples_per_chain,
+		burn,
 		y,
 		block_starts,
 		block_ends,
@@ -116,6 +119,7 @@ call_cpp <- function(
 		comphet_variant_block_starts,
 		comphet_variant_block_ends,
 		comphet_variants,
+		vec_sums,
 		return_z_trace,
 		return_x_trace
 	)
@@ -201,9 +205,10 @@ CI_gamma1_evidence <- function(
 #' @template G_matrix
 #' @template min_ac 
 #' @param return_variants Logical value determining whether to return an integer vector of indices of retained variants or the subsetted allele count matrix
+#' @importFrom Matrix rowSums colSums
 #' @export
 subset_variants <- function(G, min_ac=1L, return_variants=FALSE) {
-	vars <- which(apply(G[apply(G, 1, sum) >= min_ac,,drop=FALSE], 2, sum) > 0L)
+	vars <- which(colSums(G[rowSums(G) >= min_ac,,drop=FALSE]) > 0L)
 	if (return_variants)
 		vars
 	else
@@ -415,6 +420,7 @@ to_var_tab <- function(G_args) {
 #' @template burn
 #' @template temperatures
 #' @param tune_temps Integer value - if greater than 0, the \code{temperatures} argument is ignored, and instead \code{tune_temps} tuned temperatures are used instead.
+#' @template vec_sums
 #' @template return_z_trace
 #' @template return_x_trace
 #' @param raw_only Logical value determining whether to return raw output of MCMC routine only.
@@ -455,6 +461,7 @@ bevimed_m <- function(
 	burn=as.integer(samples_per_chain/10),
 	temperatures=(0:6/6)^2,
 	tune_temps=0,
+	vec_sums=FALSE,
 	return_z_trace=TRUE,
 	return_x_trace=TRUE,
 	raw_only=FALSE,
@@ -484,7 +491,7 @@ bevimed_m <- function(
 			stopifnot(is.numeric(variant_weights))
 			stopifnot(length(variant_weights) == ncol(G))
 			if (standardise_weights) {
-				if (length(variant_weights) == 1L | sd(variant_weights) == 0)
+				if (length(variant_weights) < 2L | sd(variant_weights) == 0)
 					rep(0, ncol(G))
 				else
 					(variant_weights-mean(variant_weights))/sd(variant_weights)
@@ -496,11 +503,14 @@ bevimed_m <- function(
 	G_args <- get_G_args(G)
 
 	G_logical <- G > 0
-	comphet_cases <- rowSums(G_logical) > 1L
-	comphet_variants <- lapply(split(as.matrix(G_logical[comphet_cases,,drop=FALSE]), seq(length.out=sum(comphet_cases))), which)
+	comphet_cases <- which(rowSums(G_logical) > 1L)
+	comphet_variants <- vector(mode="list", length=length(comphet_cases))
+	for (chci in seq_along(comphet_cases)) {
+		comphet_variants[[chci]] <- which(G_logical[comphet_cases[chci],])
+	}
 	comphet_block_ends <- unname(cumsum(lapply(comphet_variants, length)))
 	comphet_block_starts <- if (length(comphet_block_ends) > 0) c(0, comphet_block_ends[-length(comphet_block_ends)]) else integer(0)
-	adjusted_tvu <- if (sum(comphet_cases) > 0) tandem_variant_updates else 0
+	adjusted_tvu <- if (length(comphet_cases) > 0) tandem_variant_updates else 0
 
 	initial_log_phi_proposal_sd <- 0.5
 	initial_logit_omega_proposal_sd <- 1
@@ -563,6 +573,7 @@ bevimed_m <- function(
 				temperatures=rep(1, length(temperatures)),
 				chain_swaps_per_cycle=swaps,
 				annealing=TRUE,
+				vec_sums=FALSE,
 				return_z_trace=FALSE,
 				return_x_trace=FALSE
 			)
@@ -608,6 +619,7 @@ bevimed_m <- function(
 				log_phi_proposal_sds=proposal_sds[["log_phi"]], 
 				temperatures=temperatures,
 				annealing=FALSE,
+				vec_sums=FALSE,
 				return_z_trace=FALSE,
 				return_x_trace=FALSE
 			)
@@ -647,6 +659,7 @@ bevimed_m <- function(
 					log_phi_proposal_sds=proposal_sds[["log_phi"]], 
 					temperatures=temperatures,
 					annealing=FALSE,
+					vec_sums=vec_sums,
 					return_z_trace=return_z_trace,
 					return_x_trace=return_x_trace
 				)

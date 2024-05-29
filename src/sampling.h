@@ -39,6 +39,7 @@ inline double logit_beta(
 // [[Rcpp::export]]
 List bevimed_mc(
 	int its,
+	int burn,
 	LogicalVector y,
 	IntegerVector var_block_start_index,
 	IntegerVector var_block_stop_index,
@@ -68,6 +69,7 @@ List bevimed_mc(
 	IntegerVector y1_case_block_start_index,
 	IntegerVector y1_case_block_stop_index,
 	IntegerVector y1_variants,
+	bool vec_sums,
 	bool return_z_trace,
 	bool return_x_trace
 );
