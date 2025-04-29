@@ -53,6 +53,7 @@ List bevimed_mc(
 		temperature_chain_reference[temp] = temp;
 	}
 
+	NumericVector est_rates(2, 0.0);
 	NumericVector var_patho(k, 0.0);
 	NumericVector var_expl(k, 0.0);
 	NumericVector case_expl(n, 0.0);
@@ -575,18 +576,23 @@ List bevimed_mc(
 				x_trace(it, samp) = x(temperature_chain_reference[num_temps-1], samp);
 			}
 		}
-		if (vec_sums && it >= burn) {
-			int chn = temperature_chain_reference[num_temps-1];
-			for (int v = 0; v < k; v++) {
-				if (z_trace(it, chn * k + v)) var_patho[v] += inc * z(chn, v);
-				bool expl = false;
-				for (int i = var_block_start_index[v]; i < var_block_stop_index[v]; i++) {
-					expl |= (y[cases[i]] && x(chn, cases[i]));
+		if (it >= burn) {
+			int chn = temperature_chain_reference[num_temps-1];	
+			est_rates[0] += inc * (tau_shape1 + (double)(count_y1[chn] - count_y1x1[chn])) / (tau_shape1 + tau_shape2 + (double)(n - count_x1[chn]));
+			est_rates[1] += inc * (pi_shape1 + (double)count_y1x1[chn]) / (pi_shape1 + pi_shape2 + (double)count_x1[chn]);
+
+			if (vec_sums) {
+				for (int v = 0; v < k; v++) {
+					var_patho[v] += inc * z(chn, v);
+					bool expl = false;
+					for (int i = var_block_start_index[v]; i < var_block_stop_index[v]; i++) {
+						expl |= (y[cases[i]] && x(chn, cases[i]));
+					}
+					if (expl) var_expl[v] += inc;
 				}
-				if (expl) var_expl[v] += inc;
-			}
-			for (int ci = 0; ci < sum_y; ci++) {
-				case_expl[case_inds[ci]] += inc * x(chn, case_inds[ci]);
+				for (int ci = 0; ci < sum_y; ci++) {
+					case_expl[case_inds[ci]] += inc * x(chn, case_inds[ci]);
+				}
 			}
 		}
 	}
@@ -616,7 +622,8 @@ List bevimed_mc(
 			Named("vec_sums")=vec_sums,
 			Named("case_expl")=case_expl,
 			Named("var_expl")=var_expl,
-			Named("var_patho")=var_patho
+			Named("var_patho")=var_patho,
+			Named("est_rates")=est_rates
 		),
 		Named("swaps")=List::create(
 			Named("accept")=swap_accept_trace,

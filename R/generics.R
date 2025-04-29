@@ -18,6 +18,8 @@
 #' \item `omega': the posterior mean of omega,
 #' \item `omega_acceptance_rate': if omega was estimated, the rate of acceptance of proposed omega values in the Metropolis-Hastings sampling routine,  
 #' \item `phi_estimated': logical value indicating whether the parameter phi was estimated,
+#' \item `tau': the posterior mean of tau,
+#' \item `pi': the posterior mean of pi,
 #' \item `phi': the posterior mean of phi,
 #' \item `phi_acceptance_rate': if phi was estimated, the rate of acceptance of proposed phi values in the Metropolis-Hastings sampling routine, 
 #' \item `N`: number of samples in the analysis,
@@ -70,6 +72,8 @@ summary.BeviMed_m <- function(object, confidence=0.95, simulations=1000, ...) {
 				NA 
 			}
 		},
+		`tau`=object[["aggregates"]][["est_rates"]][1],
+		`pi`=object[["aggregates"]][["est_rates"]][2],
 		phi_acceptance_rate=if (phi_estimated) apply(object[["traces"]][["log_phi"]], 2, function(log_phis) mean(log_phis[-length(log_phis)] != log_phis[-1])) else NA, 
 		omega_acceptance_rate=if (omega_estimated) apply(object[["traces"]][["logit_omega"]], 2, function(logit_omegas) mean(logit_omegas[-length(logit_omegas)] != logit_omegas[-1])) else NA, 
 		N=length(object[["parameters"]][["y"]]),

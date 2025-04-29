@@ -120,7 +120,7 @@ call_cpp <- function(
 		comphet_variant_block_ends,
 		comphet_variants,
 		vec_sums,
-		return_z_trace,
+		if (vec_sums) TRUE else return_z_trace,
 		return_x_trace
 	)
 

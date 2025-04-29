@@ -34,6 +34,8 @@ Returns a \code{BeviMed_m_summary} object, which is a list containing elements:
 \item `omega': the posterior mean of omega,
 \item `omega_acceptance_rate': if omega was estimated, the rate of acceptance of proposed omega values in the Metropolis-Hastings sampling routine,  
 \item `phi_estimated': logical value indicating whether the parameter phi was estimated,
+\item `tau': the posterior mean of tau,
+\item `pi': the posterior mean of pi,
 \item `phi': the posterior mean of phi,
 \item `phi_acceptance_rate': if phi was estimated, the rate of acceptance of proposed phi values in the Metropolis-Hastings sampling routine, 
 \item `N`: number of samples in the analysis,

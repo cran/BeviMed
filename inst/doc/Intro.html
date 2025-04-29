@@ -12,7 +12,7 @@
 
 <meta name="author" content="Daniel Greene" />
 
-<meta name="date" content="2024-05-29" />
+<meta name="date" content="2025-04-29" />
 
 <title>BeviMed Introduction</title>
 
@@ -29,46 +29,32 @@ document.addEventListener('DOMContentLoaded', function(e) {
   }
 });
 </script>
-<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
-// v0.0.1
-// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
-
-document.addEventListener('DOMContentLoaded', function() {
-  const codeList = document.getElementsByClassName("sourceCode");
-  for (var i = 0; i < codeList.length; i++) {
-    var linkList = codeList[i].getElementsByTagName('a');
-    for (var j = 0; j < linkList.length; j++) {
-      if (linkList[j].innerHTML === "") {
-        linkList[j].setAttribute('aria-hidden', 'true');
-      }
-    }
-  }
-});
-</script>
 
 <style type="text/css">
-  code{white-space: pre-wrap;}
-  span.smallcaps{font-variant: small-caps;}
-  span.underline{text-decoration: underline;}
-  div.column{display: inline-block; vertical-align: top; width: 50%;}
-  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-  ul.task-list{list-style: none;}
-    </style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
 
 
 
 <style type="text/css">
-  code {
-    white-space: pre;
-  }
-  .sourceCode {
-    overflow: visible;
-  }
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
 </style>
 <style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
 pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
 div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
@@ -80,55 +66,54 @@ pre > code.sourceCode { white-space: pre-wrap; }
 pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
-  { counter-reset: source-line 0; }
+{ counter-reset: source-line 0; }
 pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
+{ position: relative; left: -4em; counter-increment: source-line; }
 pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-    color: #aaaaaa;
-  }
-pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
 div.sourceCode
-  {   }
+{ }
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code span.at { color: #7d9029; } /* Attribute */
-code span.bn { color: #40a070; } /* BaseN */
-code span.bu { } /* BuiltIn */
-code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code span.ch { color: #4070a0; } /* Char */
-code span.cn { color: #880000; } /* Constant */
-code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code span.dt { color: #902000; } /* DataType */
-code span.dv { color: #40a070; } /* DecVal */
-code span.er { color: #ff0000; font-weight: bold; } /* Error */
-code span.ex { } /* Extension */
-code span.fl { color: #40a070; } /* Float */
-code span.fu { color: #06287e; } /* Function */
-code span.im { } /* Import */
-code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code span.op { color: #666666; } /* Operator */
-code span.ot { color: #007020; } /* Other */
-code span.pp { color: #bc7a00; } /* Preprocessor */
-code span.sc { color: #4070a0; } /* SpecialChar */
-code span.ss { color: #bb6688; } /* SpecialString */
-code span.st { color: #4070a0; } /* String */
-code span.va { color: #19177c; } /* Variable */
-code span.vs { color: #4070a0; } /* VerbatimString */
-code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
 </style>
 <script>
 // apply pandoc div.sourceCode style to pre.sourceCode instead
@@ -356,47 +341,101 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">BeviMed Introduction</h1>
 <h4 class="author">Daniel Greene</h4>
-<h4 class="date">2024-05-29</h4>
+<h4 class="date">2025-04-29</h4>
 
 
 
-<p><code>BeviMed</code>, which stands for <em>Bayesian Evaluation of Variant Involvement in Mendelian Disease</em> [1], is an association test which estimates the probability of an association between a given set of variants and a case/control label, the mode of inheritance for the disease, and the probability that each individual variant is pathogenic. This vignette gives a quick description of what can be done with the package and demonstrates how to use it on simulated data. For more detailed explanations, see the ‘BeviMed Guide’ vignette and the individual function help pages.</p>
-<p>Inference is performed by the <code>bevimed</code> function, which evaluates the data with respect to three models: a model of no association between case/control label and allele counts, and models of dominant and recessive association. The function depends on input parameters:</p>
+<p><code>BeviMed</code>, which stands for <em>Bayesian Evaluation of
+Variant Involvement in Mendelian Disease</em> [1], is an association
+test which estimates the probability of an association between a given
+set of variants and a case/control label, the mode of inheritance for
+the disease, and the probability that each individual variant is
+pathogenic. This vignette gives a quick description of what can be done
+with the package and demonstrates how to use it on simulated data. For
+more detailed explanations, see the ‘BeviMed Guide’ vignette and the
+individual function help pages.</p>
+<p>Inference is performed by the <code>bevimed</code> function, which
+evaluates the data with respect to three models: a model of no
+association between case/control label and allele counts, and models of
+dominant and recessive association. The function depends on input
+parameters:</p>
 <ul>
-<li>case-control label <code>y</code>, a length <code>N</code> (number of samples) <code>logical</code> vector,</li>
-<li>genotype matrix <code>G</code>, an <code>N</code> by <code>k</code> integer matrix of allele counts for <code>N</code> individuals at <code>k</code> rare variant sites,</li>
-<li><code>prior_prob_association</code> - the prior probability of association between the disease label and the variants in the locus. Defaults to <code>0.01</code>.</li>
-<li><code>prior_prob_dominant</code> - the prior probability of dominant as opposed to recessive inheritance, given an association with the locus. Defaults to <code>0.5</code>.</li>
-<li><code>ploidy</code> - a vector the same length as the case-control label <code>y</code> giving the ploidy of each individual in the locus. Defaults to <code>2</code> for each sample.</li>
-<li>other arguments controlling the inference procedure and prior distributions of parameters (see <code>?bevimed</code> for more details).</li>
+<li>case-control label <code>y</code>, a length <code>N</code> (number
+of samples) <code>logical</code> vector,</li>
+<li>genotype matrix <code>G</code>, an <code>N</code> by <code>k</code>
+integer matrix of allele counts for <code>N</code> individuals at
+<code>k</code> rare variant sites,</li>
+<li><code>prior_prob_association</code> - the prior probability of
+association between the disease label and the variants in the locus.
+Defaults to <code>0.01</code>.</li>
+<li><code>prior_prob_dominant</code> - the prior probability of dominant
+as opposed to recessive inheritance, given an association with the
+locus. Defaults to <code>0.5</code>.</li>
+<li><code>ploidy</code> - a vector the same length as the case-control
+label <code>y</code> giving the ploidy of each individual in the locus.
+Defaults to <code>2</code> for each sample.</li>
+<li>other arguments controlling the inference procedure and prior
+distributions of parameters (see <code>?bevimed</code> for more
+details).</li>
 </ul>
-<p><code>bevimed</code> returns an object of class <code>BeviMed</code> which contains the output of the (MCMC-based) inference procedure, including samples from the posterior distributions of the model parameters. The object can be evaluated at the command line to print a summary of inference, telling you summary statistics of interest, including the probability of association. The object is likely to take up a lot of memory, so it is useful to store a summary, computed with <code>summary</code>, for each result if the procedure is being applied to multiple loci.</p>
-<p>Summary statistics can also be computed directly from the arguments using the functions (see help for individual functions for more information):</p>
+<p><code>bevimed</code> returns an object of class <code>BeviMed</code>
+which contains the output of the (MCMC-based) inference procedure,
+including samples from the posterior distributions of the model
+parameters. The object can be evaluated at the command line to print a
+summary of inference, telling you summary statistics of interest,
+including the probability of association. The object is likely to take
+up a lot of memory, so it is useful to store a summary, computed with
+<code>summary</code>, for each result if the procedure is being applied
+to multiple loci.</p>
+<p>Summary statistics can also be computed directly from the arguments
+using the functions (see help for individual functions for more
+information):</p>
 <ul>
-<li><code>prob_association</code> - returning the probability of association, optionally broken down by mode of inheritance.</li>
-<li><code>conditional_prob_pathogenic</code> - the probabilities of pathogenicity for the individual variants conditional on a mode of inheritance.</li>
-<li><code>expected_explained</code> - the expected number of cases explained by variants.</li>
-<li><code>explaining_variants</code> - the expected number of variants involved in explained cases.</li>
+<li><code>prob_association</code> - returning the probability of
+association, optionally broken down by mode of inheritance.</li>
+<li><code>conditional_prob_pathogenic</code> - the probabilities of
+pathogenicity for the individual variants conditional on a mode of
+inheritance.</li>
+<li><code>expected_explained</code> - the expected number of cases
+explained by variants.</li>
+<li><code>explaining_variants</code> - the expected number of variants
+involved in explained cases.</li>
 </ul>
-<p>Here we demonstrate a simple application of BeviMed for some simulated data.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">library</span>(BeviMed)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">0</span>)</span></code></pre></div>
-<p>Firstly, we’ll generate a random allele-count matrix <code>G</code> for 100 samples at 20 variant sites (each with an allele frequency of 0.02) and an independently generated case-control label, <code>y_random</code>.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>G &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">rbinom</span>(<span class="dt">size=</span><span class="dv">2</span>, <span class="dt">prob=</span><span class="fl">0.02</span>, <span class="dt">n=</span><span class="dv">100</span><span class="op">*</span><span class="dv">20</span>), <span class="dt">nrow=</span><span class="dv">100</span>, <span class="dt">ncol=</span><span class="dv">20</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>y_random &lt;-<span class="st"> </span><span class="kw">runif</span>(<span class="dt">n=</span><span class="kw">nrow</span>(G)) <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.1</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="kw">prob_association</span>(<span class="dt">G=</span>G, <span class="dt">y=</span>y_random)</span></code></pre></div>
+<p>Here we demonstrate a simple application of BeviMed for some
+simulated data.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(BeviMed)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">0</span>)</span></code></pre></div>
+<p>Firstly, we’ll generate a random allele-count matrix <code>G</code>
+for 100 samples at 20 variant sites (each with an allele frequency of
+0.02) and an independently generated case-control label,
+<code>y_random</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>G <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rbinom</span>(<span class="at">size=</span><span class="dv">2</span>, <span class="at">prob=</span><span class="fl">0.02</span>, <span class="at">n=</span><span class="dv">100</span><span class="sc">*</span><span class="dv">20</span>), <span class="at">nrow=</span><span class="dv">100</span>, <span class="at">ncol=</span><span class="dv">20</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>y_random <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="at">n=</span><span class="fu">nrow</span>(G)) <span class="sc">&lt;</span> <span class="fl">0.1</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">prob_association</span>(<span class="at">G=</span>G, <span class="at">y=</span>y_random)</span></code></pre></div>
 <pre><code>## [1] 0.002810699</code></pre>
-<p>The results indicate that there is a low probability of association. We now generate a new case control label <code>y_dependent</code> which depends on <code>G</code> - specifically, we treat variants 1 to 3 as ‘pathogenic’, and label any samples harbouring alleles for any of these variants as cases.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>y_dependent &lt;-<span class="st"> </span><span class="kw">apply</span>(G, <span class="dv">1</span>, <span class="cf">function</span>(variants) <span class="kw">sum</span>(variants[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>]) <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a><span class="kw">prob_association</span>(<span class="dt">G=</span>G, <span class="dt">y=</span>y_dependent)</span></code></pre></div>
+<p>The results indicate that there is a low probability of association.
+We now generate a new case control label <code>y_dependent</code> which
+depends on <code>G</code> - specifically, we treat variants 1 to 3 as
+‘pathogenic’, and label any samples harbouring alleles for any of these
+variants as cases.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>y_dependent <span class="ot">&lt;-</span> <span class="fu">apply</span>(G, <span class="dv">1</span>, <span class="cf">function</span>(variants) <span class="fu">sum</span>(variants[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>]) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">prob_association</span>(<span class="at">G=</span>G, <span class="at">y=</span>y_dependent)</span></code></pre></div>
 <pre><code>## [1] 0.9998203</code></pre>
-<p>Notice that there is now a higher estimated probability of association.</p>
-<p>By default, <code>prob_association</code> integrates over mode of inheritance (e.g. are at least 1 or 2 pathogenic variants required for a pathogenic configuration?). The probabilities of association with each mode of inheritance can by shown by passing the option <code>by_MOI=TRUE</code> (for more details, including how to set the ploidy of the samples within the region, see <code>?prob_pathogenic</code>).</p>
-<p>For a more detailed output, the <code>bevimed</code> function can be used, and it’s returned values can be summarised and stored/printed.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>output &lt;-<span class="st"> </span><span class="kw">summary</span>(<span class="kw">bevimed</span>(<span class="dt">G=</span>G, <span class="dt">y=</span>y_dependent))</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>output</span></code></pre></div>
+<p>Notice that there is now a higher estimated probability of
+association.</p>
+<p>By default, <code>prob_association</code> integrates over mode of
+inheritance (e.g. are at least 1 or 2 pathogenic variants required for a
+pathogenic configuration?). The probabilities of association with each
+mode of inheritance can by shown by passing the option
+<code>by_MOI=TRUE</code> (for more details, including how to set the
+ploidy of the samples within the region, see
+<code>?prob_pathogenic</code>).</p>
+<p>For a more detailed output, the <code>bevimed</code> function can be
+used, and it’s returned values can be summarised and stored/printed.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>output <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">bevimed</span>(<span class="at">G=</span>G, <span class="at">y=</span>y_dependent))</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>output</span></code></pre></div>
 <pre><code>## -------------------------------------------------------------------------------- 
 ## Posterior probability of association: 
 ##  1 [prior: 0.01]
@@ -438,7 +477,9 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <div id="references" class="section level2">
 <h2>References</h2>
 <ol style="list-style-type: decimal">
-<li>Greene et al., A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases, The American Journal of Human Genetics (2017), <a href="http://dx.doi.org/10.1016/j.ajhg.2017.05.015" class="uri">http://dx.doi.org/10.1016/j.ajhg.2017.05.015</a></li>
+<li>Greene et al., A Fast Association Test for Identifying Pathogenic
+Variants Involved in Rare Diseases, The American Journal of Human
+Genetics (2017), <a href="http://dx.doi.org/10.1016/j.ajhg.2017.05.015" class="uri">http://dx.doi.org/10.1016/j.ajhg.2017.05.015</a></li>
 </ol>
 </div>
 

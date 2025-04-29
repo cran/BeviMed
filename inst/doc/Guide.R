@@ -45,27 +45,27 @@ obj
 bevimed_polytomous(y=G[,1] > 0, G=G, variant_sets=list(`first`=1, `all`=1:ncol(G)))
 
 ## ----multiple, eval=FALSE, echo=TRUE------------------------------------------
-#  source(paste0(system.file(package="BeviMed", "/scripts/vcf.R")))
-#  all_variants <- vcf2matrix("my-vcf.vcf.gz", chr="1", from=1, to=1e9, include_variant_info=TRUE)
-#  row_indices_per_gene <- lapply(1:nrow(chr1genes), function(i) {
-#  	which(all_variants$info$POS >= chr1genes$start[i] & all_variants$info$POS <= chr1genes$end[i])
-#  })
-#  names(row_indices_per_gene) <- chr1genes$gene
-#  
-#  results <- mclapply(
-#  	mc.cores=16L,
-#  	X=chr1genes$gene,
-#  	FUN=function(gene) {
-#  		G <- all_variants$G[row_indices_per_gene[[gene]],,drop=FALSE]
-#  		c(
-#  			list(gene=gene),
-#  			summary(bevimed(y=y, G=G))) })
-#  
-#  results_table <- do.call(what=rbind, lapply(results, function(x) data.frame(
-#  	Gene=x[["gene"]],
-#  	`Prob. assoc`=sum(x[["prob_association"]]),
-#  	`Prob. dominance`=x[["prob_association"]]["dominant"]/sum(x[["prob_association"]]),
-#  	check.names=FALSE,
-#  	stringsAsFactors=FALSE
-#  )))
+# source(paste0(system.file(package="BeviMed", "/scripts/vcf.R")))
+# all_variants <- vcf2matrix("my-vcf.vcf.gz", chr="1", from=1, to=1e9, include_variant_info=TRUE)
+# row_indices_per_gene <- lapply(1:nrow(chr1genes), function(i) {
+# 	which(all_variants$info$POS >= chr1genes$start[i] & all_variants$info$POS <= chr1genes$end[i])
+# })
+# names(row_indices_per_gene) <- chr1genes$gene
+# 
+# results <- mclapply(
+# 	mc.cores=16L,
+# 	X=chr1genes$gene,
+# 	FUN=function(gene) {
+# 		G <- all_variants$G[row_indices_per_gene[[gene]],,drop=FALSE]
+# 		c(
+# 			list(gene=gene),
+# 			summary(bevimed(y=y, G=G))) })
+# 
+# results_table <- do.call(what=rbind, lapply(results, function(x) data.frame(
+# 	Gene=x[["gene"]],
+# 	`Prob. assoc`=sum(x[["prob_association"]]),
+# 	`Prob. dominance`=x[["prob_association"]]["dominant"]/sum(x[["prob_association"]]),
+# 	check.names=FALSE,
+# 	stringsAsFactors=FALSE
+# )))
 
